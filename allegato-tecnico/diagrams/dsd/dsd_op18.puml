@@ -1,0 +1,46 @@
+@startuml dsd_op18
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "e:Event" as ev
+participant "eventManager.eventReceivers:\nEventReceivers" as er
+
+hide footbox
+
+ui -> em : rimuoviServizio(servizio)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> em : e = currentEvent
+
+em -> ev : getStato()
+ev --> em : stato
+
+alt stato != EventStatus.BOZZA
+  em --> ui : throw UseCaseLogicException("**1d.1a.1** evento non più modificabile")
+end
+
+em -> ev : getServizi()
+ev --> em : servizi
+
+alt servizio not in servizi
+  em --> ui : throw UseCaseLogicException("servizio non appartenente all'evento corrente")
+end
+
+em -> ev : rimuoviServizio(servizio)
+ev --> em
+
+em -> em : notifyEventModified(e)
+loop per ogni receiver in eventReceivers
+  em -> er : updateEventModified(e)
+end
+
+em --> ui : [ok — servizio rimosso]
+
+@enduml

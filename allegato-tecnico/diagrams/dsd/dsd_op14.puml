@@ -1,0 +1,56 @@
+@startuml dsd_op14
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "e:Event" as ev
+participant "s:Service" as srv
+participant "t:ServiceShift" as ts
+participant "a:ServiceAssignment" as sa
+participant "eventManager.eventReceivers:\nEventReceivers" as er
+
+hide footbox
+
+ui -> em : annullaServizio(servizio)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> em : e = currentEvent
+
+em -> ev : getServizi()
+ev --> em : servizi
+
+alt servizio not in servizi
+  em --> ui : throw UseCaseLogicException("servizio non appartenente all'evento corrente")
+end
+
+alt servizio.getStato() == ServiceStatus.ANNULLATO OR servizio.getStato() == ServiceStatus.TERMINATO
+  em --> ui : throw UseCaseLogicException("**1i.1a.1** il servizio non è annullabile")
+end
+
+em -> srv : annulla()
+srv -> srv : setStato(ServiceStatus.ANNULLATO)
+
+srv -> srv : getTurni()
+loop per ogni turno t in turni
+  srv -> ts : getIncarichi()
+  ts --> srv : incarichi
+  loop per ogni incarico a in incarichi
+    srv -> sa : delete()
+  end
+end
+srv --> em
+
+em -> em : notifyEventModified(e)
+loop per ogni receiver in eventReceivers
+  em -> er : updateEventModified(e)
+end
+
+em --> ui : servizio annullato;\npenale segnalata
+
+@enduml

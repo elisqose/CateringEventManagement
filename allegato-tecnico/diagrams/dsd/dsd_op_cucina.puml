@@ -1,0 +1,33 @@
+  @startuml dsd_op_cucina
+  skinparam sequenceArrowThickness 2
+
+  participant UI as ui
+  participant "eventManager:\nEventManager" as em
+  participant "userMgr:\nUserManager" as um
+  participant "altro:Event" as altro
+
+  hide footbox
+
+  ui -> em : visualizzaStatoCucina()
+  em -> um : getCurrentUser()
+  um --> em : user
+
+  alt !user.isOrganizer()
+    em --> ui : throw UseCaseLogicException
+  end
+
+  em -> em : e = currentEvent
+  em -> em : schede = []
+
+  loop per ogni altro evento (diverso da e, non annullato\n  ne' terminato, con date sovrapposte a quelle di e)
+    em -> altro : getServizi()
+    altro --> em : servizi
+    loop per ogni servizio s in servizi
+      em -> em : sheets = SummarySheet.loadSummarySheetsByServiceId(s)
+      em -> em : schede.addAll(sheets)
+    end
+  end
+
+  em --> ui : impegni cucina nei giorni richiesti\n(List<SummarySheet>)
+
+  @enduml

@@ -1,0 +1,49 @@
+@startuml dsd_op11
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "t:ServiceShift" as shift
+participant "eventManager.eventReceivers:\nEventReceivers" as er
+
+hide footbox
+
+ui -> em : rimuoviPersonaleDaTurno(turno, personale)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> em : e = currentEvent
+
+alt turno non appartiene a e
+  em --> ui : throw UseCaseLogicException("turno non valido")
+end
+
+em -> shift : getIncaricoDiPersonale(personale)
+shift --> em : a
+
+alt a == null
+  em --> ui : throw UseCaseLogicException("personale non assegnato al turno")
+end
+
+em -> shift : rimuoviIncarico(a)
+shift -> shift : isModificabile()
+
+alt modificabile = false
+  shift --> ui : throw UseCaseLogicException("**8b.1a.1** turno già svolto o in corso")
+end
+
+shift --> em
+
+em -> em : notifyEventModified(currentEvent)
+loop per ogni receiver in eventReceivers
+  em -> er : updateEventModified(currentEvent)
+end
+
+em --> ui : [ok — assegnazione rimossa]
+
+@enduml

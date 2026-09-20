@@ -1,0 +1,54 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# IDE / Editor
+.idea/
+*.iml
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# LaTeX auxiliary files
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.idx
+*.ilg
+*.ind
+*.nav
+*.snm
+*.vrb
+
+# PlantUML JAR (scaricato automaticamente dallo script build.py se assente)
+allegato-tecnico/plantuml.jar
+*.jar
+
+# Java / Maven
+target/
+**/target/
+*.class
+*.war
+*.ear
+
+# Keep compiled PDF
+!allegato-tecnico/out/Allegato Tecnico.pdf

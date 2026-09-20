@@ -1,0 +1,35 @@
+@startuml dsd_op16
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "e:Event" as ev
+
+hide footbox
+
+ui -> em : apriEvento(evento)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> ev : getOrganizzatore()
+ev --> em : organizzatore
+
+em -> em : organizzatoreCorrente = user.asOrganizer()
+
+alt organizzatore != organizzatoreCorrente
+  em --> ui : throw UseCaseLogicException("l'organizzatore non gestisce l'evento indicato")
+end
+
+em -> em : currentEvent = evento
+
+em -> ev : getStato()
+ev --> em : stato
+
+em --> ui : scheda evento [stato: bozza | in_corso | terminato | annullato]
+
+@enduml

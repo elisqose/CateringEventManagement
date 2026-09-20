@@ -1,0 +1,40 @@
+@startuml dsd_op19
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "i:Event" as inst
+participant "er:RecurringEvent" as er
+
+hide footbox
+
+ui -> em : selezionaIstanza(istanza)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> inst : getMacroEvento()
+inst --> em : er
+
+alt er == null
+  em --> ui : throw UseCaseLogicException("istanza non appartiene a un evento ricorrente")
+end
+
+em -> er : getOrganizzatore()
+er --> em : organizzatore
+
+em -> em : organizzatoreCorrente = user.asOrganizer()
+
+alt organizzatore != organizzatoreCorrente
+  em --> ui : throw UseCaseLogicException("l'organizzatore non gestisce l'evento indicato")
+end
+
+em -> em : currentEvent = istanza
+
+em --> ui : richiesta scope (solo questa istanza\no tutte le istanze modificabili)
+
+@enduml

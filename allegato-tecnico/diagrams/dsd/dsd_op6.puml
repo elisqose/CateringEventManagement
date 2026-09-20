@@ -1,0 +1,108 @@
+@startuml dsd_op6
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "e:Event" as ev
+participant "s:Service" as srv
+participant "eventManager.eventReceivers:\nEventReceivers" as er
+
+hide footbox
+
+group eliminaEvento
+  ui -> em : eliminaEvento(evento)
+  em -> um : getCurrentUser()
+  um --> em : user
+
+  alt !user.isOrganizer()
+    em --> ui : throw UseCaseLogicException
+  end
+
+  em -> ev : getOrganizzatore()
+  ev --> em : organizzatore
+
+  em -> em : organizzatoreCorrente = user.asOrganizer()
+
+  alt organizzatore != organizzatoreCorrente
+    em --> ui : throw UseCaseLogicException("l'organizzatore non gestisce l'evento indicato")
+  end
+
+  em -> ev : isEliminabile()
+  ev --> em : eliminabile
+
+  alt eliminabile = false
+    em --> ui : throw UseCaseLogicException("**1e.1a.1** non eliminabile — proposta: annullaEvento")
+  end
+
+  em -> em : currentEvent = null
+
+  em -> ev : deleteEvent()
+  ev -> ev : getServizi()
+  loop per ogni s in servizi
+    ev -> ev : rimuoviServizio(s)
+    ev -> srv : deleteService()
+  end
+  ev --> em
+
+  em -> em : notifyEventDeleted(evento)
+  loop per ogni receiver in eventReceivers
+    em -> er : updateEventDeleted(evento)
+  end
+
+  em --> ui : [ok — UC termina]
+end
+
+|||
+
+group annullaEvento
+  ui -> em : annullaEvento(evento)
+  em -> um : getCurrentUser()
+  um --> em : user
+
+  alt !user.isOrganizer()
+    em --> ui : throw UseCaseLogicException
+  end
+
+  em -> ev : getOrganizzatore()
+  ev --> em : organizzatore
+
+  em -> em : organizzatoreCorrente = user.asOrganizer()
+
+  alt organizzatore != organizzatoreCorrente
+    em --> ui : throw UseCaseLogicException("l'organizzatore non gestisce l'evento indicato")
+  end
+
+  em -> ev : isAnnullabile()
+  ev --> em : annullabile
+
+  alt annullabile = false
+    em --> ui : throw UseCaseLogicException("**1f.1b.1** evento non annullabile\n(se in bozza, propone eliminazione)")
+  end
+
+  em -> ev : getDataInizio()
+  ev --> em : dataInizio
+
+  em -> em : penale = (dataInizio - dataCorrente) < 1 settimana
+
+  em -> ev : annulla()
+  ev -> ev : setStato(EventStatus.ANNULLATO)
+  ev -> ev : getServizi()
+  loop per ogni s in servizi
+    ev -> srv : annulla()
+  end
+  ev --> em
+
+  em -> em : notifyEventCancelled(evento)
+  loop per ogni receiver in eventReceivers
+    em -> er : updateEventCancelled(evento)
+  end
+
+  alt penale = true
+    em --> ui : [ok — **1f.1a.1** verrà addebitata una penale al cliente]
+  else penale = false
+    em --> ui : [ok]
+  end
+end
+
+@enduml

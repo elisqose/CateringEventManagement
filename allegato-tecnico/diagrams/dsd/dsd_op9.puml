@@ -1,0 +1,61 @@
+@startuml dsd_op9
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "e:Event" as ev
+participant "s:Service" as srv
+participant "pa:ProposalToAdd" as pa
+participant "pr:ProposalToRemove" as pr
+
+hide footbox
+
+ui -> em : proponiModificaMenu(servizio, menu, voci, operazione)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> em : e = currentEvent
+
+em -> ev : getServizi()
+ev --> em : servizi
+
+alt servizio not in servizi
+  em --> ui : throw UseCaseLogicException("servizio non appartenente all'evento corrente")
+end
+
+em -> srv : getStato()
+srv --> em : stato
+
+alt stato != ServiceStatus.IN_PREPARAZIONE
+  em --> ui : throw UseCaseLogicException("**7a.1a.1** menù già confermato")
+end
+
+em -> srv : getMenu()
+srv --> em : menuCorrente
+
+alt menu != menuCorrente
+  em --> ui : throw UseCaseLogicException("il menù indicato non è quello scelto per il servizio")
+end
+
+em -> srv : creaProposta(voci, operazione)
+
+alt operazione = ProposalOperation.ADD
+  create pa
+  srv -> pa : create(srv.menuScelto, voci)
+  pa --> srv : p
+else operazione = ProposalOperation.REMOVE
+  create pr
+  srv -> pr : create(srv.menuScelto, voci)
+  pr --> srv : p
+end
+srv -> srv : proposte.add(p)
+srv --> em : p
+
+em --> ui : [ok — modifica registrata, visibile allo chef]
+
+@enduml

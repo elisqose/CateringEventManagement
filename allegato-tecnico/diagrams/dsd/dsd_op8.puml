@@ -1,0 +1,34 @@
+@startuml dsd_op8
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "e:Event" as ev
+participant "s:Service" as srv
+
+hide footbox
+
+ui -> em : consultaMenuServizio(servizio)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> em : e = currentEvent
+
+em -> ev : getServizi()
+ev --> em : servizi
+
+alt servizio not in servizi
+  em --> ui : throw UseCaseLogicException("servizio non appartenente all'evento corrente")
+end
+
+em -> srv : getMenu()
+srv --> em : menu
+
+em --> ui : menu proposto per il servizio
+
+@enduml

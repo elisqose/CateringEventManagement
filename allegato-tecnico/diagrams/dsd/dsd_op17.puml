@@ -1,0 +1,110 @@
+@startuml dsd_op17
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "e:Event" as ev
+participant "s:Service" as srv
+participant "er:RecurringEvent" as rec
+participant "i:Event" as ist
+participant "t:ServiceShift" as ts
+
+hide footbox
+
+== aggiungiServizio ==
+
+ui -> em : aggiungiServizio(tipoServizio, offsetInizio,\n  oraInizio, oraFine, numeroCommensali)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> em : e = currentEvent
+
+em -> ev : getStato()
+ev --> em : stato
+
+alt stato != EventStatus.BOZZA
+  em --> ui : throw UseCaseLogicException("evento non più modificabile")
+end
+
+em -> ev : creaServizio(tipoServizio, offsetInizio,\n  oraInizio, oraFine, numeroCommensali)
+
+ev -> ev : dataServizio = dataInizio.plusDays(offsetInizio)
+
+alt dataServizio precede dataCorrente OR dataServizio fuori\n  dall'intervallo di date dell'evento
+  ev --> ui : throw UseCaseLogicException("**3a.1** orario del servizio non valido")
+end
+
+create srv
+ev -> srv : create(tipoServizio, offsetInizio,\n  oraInizio, oraFine, numeroCommensali)
+srv -> srv : stato = ServiceStatus.IN_PREPARAZIONE
+srv --> ev : s
+ev -> ev : servizi.add(s)
+ev --> em : s
+
+em -> em : currentService = s
+
+opt e è istanza di un Evento ricorrente
+  em -> ev : getMacroEvento()
+  ev --> em : er
+  em -> rec : getIstanze()
+  rec --> em : istanze
+  loop per ogni istanza i != e con i.stato = EventStatus.BOZZA
+    em -> ist : creaServizio(tipoServizio, offsetInizio,\n  oraInizio, oraFine, numeroCommensali)
+  end
+
+end
+
+em --> ui : servizio aggiunto
+
+== inserisciTurnoServizio (opzionale) ==
+
+ui -> em : inserisciTurnoServizio(servizio, tempoPreparazione, tempoRigoverno)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> ev : getStato()
+ev --> em : stato
+
+alt stato != EventStatus.BOZZA
+  em --> ui : throw UseCaseLogicException("evento non più modificabile")
+end
+
+em -> ev : getServizi()
+ev --> em : servizi
+
+alt servizio not in servizi
+  em --> ui : throw UseCaseLogicException("servizio non appartenente all'evento corrente")
+end
+
+em -> ev : getDataInizio()
+ev --> em : dataInizioEvento
+
+em -> em : dataServizio = dataInizioEvento.plusDays(servizio.offsetInizio)
+em -> em : inizioServizio = LocalDateTime.of(dataServizio, servizio.oraInizio)
+em -> em : fineServizio = LocalDateTime.of(dataServizio, servizio.oraFine)
+
+alt fineServizio non successiva a inizioServizio\n  (servizio a cavallo della mezzanotte)
+  em -> em : fineServizio = fineServizio.plusDays(1)
+end
+
+em -> srv : creaTurnoServizio(tempoPreparazione, tempoRigoverno,\n  inizioServizio, fineServizio, ev.luogo)
+create ts
+srv -> ts : create(tempoPreparazione, tempoRigoverno,\n  inizioServizio, fineServizio, luogo)
+ts -> ts : inizio = inizioServizio.minusMinutes(tempoPreparazione)
+ts -> ts : fine = fineServizio.plusMinutes(tempoRigoverno)
+ts --> srv : t
+srv --> em : t
+
+
+em --> ui : turno di servizio registrato
+
+@enduml

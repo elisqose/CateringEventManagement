@@ -1,0 +1,53 @@
+@startuml dsd_op2
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "e:Event" as ev
+participant "chef:User" as usr
+participant "c:Chef" as chf
+
+hide footbox
+
+ui -> em : assegnaChef(chef)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> em : e = currentEvent
+
+em -> ev : getStato()
+ev --> em : stato
+
+alt stato != EventStatus.BOZZA
+  em --> ui : throw UseCaseLogicException("evento non più modificabile")
+end
+
+em -> usr : isChef()
+usr --> em : isChef
+
+alt isChef = false
+  em --> ui : throw UseCaseLogicException("l'utente indicato non e' uno chef")
+end
+
+create chf
+em -> chf : create(chef)
+chf --> em : c
+
+em -> chf : isDisponibile(e)
+chf --> em : disponibile
+
+alt disponibile = false
+  em --> ui : throw UseCaseLogicException("**5b.1** chef non disponibile")
+end
+
+em -> ev : setChef(chef)
+ev --> em
+
+em --> ui : [ok]
+
+@enduml

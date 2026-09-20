@@ -1,0 +1,66 @@
+@startuml ssd_ext6
+skinparam sequenceArrowThickness 2
+skinparam sequenceGroupBorderThickness 1
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor "Organizzatore" as org #White
+participant "Sistema" as sys #White
+
+hide footbox
+
+org -> sys : 1.creaSchedaEvento(luogo, dataInizio, durata, numeroServiziRichiesti, numeroPartecipanti, note, cliente)
+sys --> org : scheda registrata [stato: bozza]
+
+opt
+  org -> sys : 2.visualizzaStatoCucina()
+  sys --> org : impegni della cucina nei giorni richiesti
+end
+
+loop
+  org -> sys : 3.aggiungiServizio(tipoServizio, offsetInizio, oraInizio, oraFine, numeroCommensali)
+  sys --> org : servizio aggiunto
+opt
+  org -> sys : 4.inserisciTurnoServizio(servizio, tempoPreparazione, tempoRigoverno)
+  sys --> org : turno di servizio registrato
+  end
+end
+
+org -> sys : 5.assegnaChef(chef)
+sys --> org : chef assegnato
+
+loop #D9E9FF
+loop #FFE9C9
+
+  org -> sys : **6**.consultaMenuServizio(servizio)
+  sys --> org : menù proposto dallo chef per il servizio
+
+    alt #F3FFE3
+      org -> sys : **7**.approvaMenu(servizio, menu)
+      alt #ECD4FF
+        sys --> org : approvazione registrata
+      else #ECD4FF
+        sys --> org : **7b.1** menù non ancora proposto dallo chef, approvazione non possibile
+      end
+    else #F3FFE3
+      org -> sys : **7a.1** proponiModificaMenu(servizio, menu, voci, operazione)
+      alt #ECD4FF
+        sys --> org : modifica registrata
+      else #ECD4FF
+        sys --> org : **7a.1a.1** menù già confermato, modifica non consentita
+      end
+    end
+  end
+end
+
+loop
+  org -> sys : 8.assegnaPersonaleATurno(turno, personale, ruolo)
+  sys --> org : assegnazione registrata
+end
+
+  org -> sys : 9.chiudiEvento(note, documentazione)
+  sys --> org : evento terminato
+
+destroy sys
+
+@enduml

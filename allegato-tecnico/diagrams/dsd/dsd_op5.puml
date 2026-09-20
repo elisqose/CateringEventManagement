@@ -1,0 +1,49 @@
+@startuml dsd_op5
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "e:Event" as ev
+participant "s:Service" as srv
+participant "eventManager.eventReceivers:\nEventReceivers" as er
+
+hide footbox
+
+ui -> em : chiudiEvento(note, documentazione)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> em : e = currentEvent
+
+em -> ev : isChiudibile()
+ev --> em : chiudibile
+
+alt chiudibile = false
+  em --> ui : throw UseCaseLogicException("**9a.1** turni di servizio non ancora conclusi")
+end
+
+em -> ev : chiudi(note, documentazione)
+ev -> ev : setStato(EventStatus.TERMINATO)
+ev -> ev : note = this.note.concat(note)
+ev -> ev : documentazioneFinale = documentazione
+
+ev -> ev : getServizi()
+loop per ogni servizio s in servizi
+  ev -> srv : setStato(ServiceStatus.TERMINATO)
+end
+
+ev --> em
+
+em -> em : notifyEventClosed(e)
+loop per ogni receiver in eventReceivers
+  em -> er : updateEventClosed(e)
+end
+
+em --> ui : [ok]
+
+@enduml

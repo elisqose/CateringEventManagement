@@ -1,0 +1,74 @@
+ @startuml dsd_op13
+  skinparam sequenceArrowThickness 2
+
+  participant UI as ui
+  participant "eventManager:\nEventManager" as em
+  participant "userMgr:\nUserManager" as um
+  participant "er:RecurringEvent" as er
+  participant "i:Event" as inst
+  participant "eventManager.eventReceivers:\nEventReceivers" as rec
+
+  hide footbox
+
+  ui -> em : modificaRicorrenza(er, tipoFrequenza?,\n  dataFine?, numeroOccorrenze?)
+  em -> um : getCurrentUser()
+  um --> em : user
+
+  alt !user.isOrganizer()
+    em --> ui : throw UseCaseLogicException
+  end
+
+  em -> er : getOrganizzatore()
+  er --> em : organizzatore
+
+  em -> em : organizzatoreCorrente = user.asOrganizer()
+
+  alt organizzatore != organizzatoreCorrente
+    em --> ui : throw UseCaseLogicException("l'organizzatore non gestisce l'evento indicato")
+  end
+
+  em -> er : getIstanze()
+  er --> em : istanze
+
+  em -> em : esisteIstanzaModificabile = false
+  loop per ogni i in istanze
+    em -> inst : getStato()
+    inst --> em : stato
+    alt stato != EventStatus.ANNULLATO AND stato != EventStatus.TERMINATO
+      em -> em : esisteIstanzaModificabile = true
+    end
+  end
+
+  alt esisteIstanzaModificabile = false
+    em --> ui : throw UseCaseLogicException("nessuna istanza modificabile")
+  end
+
+  em -> er : getFrequenza()
+  er --> em : freqCorrente
+
+  em -> em : nuovaFreq = aggiornaFrequenza(\n  freqCorrente, tipoFrequenza?, dataFine?, numeroOccorrenze?)
+
+  em -> er : setFrequenza(nuovaFreq)
+
+  em -> er : ricalcolaIstanze()
+  er --> em : risultato
+
+  em -> em : creati = risultato.getCreati()
+  loop per ogni i in creati
+    em -> em : notifyEventCreated(i)
+    loop per ogni receiver in eventReceivers
+      em -> rec : updateEventCreated(i)
+    end
+  end
+
+  em -> em : rimossi = risultato.getRimossi()
+  loop per ogni i in rimossi
+    em -> em : notifyEventDeleted(i)
+    loop per ogni receiver in eventReceivers
+      em -> rec : updateEventDeleted(i)
+    end
+  end
+
+  em --> ui : [ok — ricorrenza aggiornata]
+
+  @enduml

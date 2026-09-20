@@ -1,0 +1,422 @@
+
+\section*{Informazioni generali}
+
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{L{4.5cm} L{9.5cm}}
+\toprule
+\textbf{Nome caso d'uso}             & Gestire gli eventi \\
+\textbf{Portata}                     & Sistema \\
+\textbf{Livello}                     & Obiettivo utente \\
+\textbf{Attore primario}             & Organizzatore \\
+\textbf{Parti interessate}           & Chef, Cuoco, Personale di servizio, Cliente \\
+\midrule
+\textbf{Pre-condizioni}              & L'attore è autenticato come Organizzatore. \\
+\textbf{Garanzie di Successo o Post-Condizioni} & L'evento è registrato con scheda evento
+                                       compilata, chef assegnato, menù approvati
+                                       e personale scelto per i turni di servizio. \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1.0}
+
+\extensionhead{Scenario principale di successo}
+
+\uctablebegin
+  \ucstep{1}
+    {Crea una nuova scheda evento specificando: luogo, data di inizio, durata, numero
+    di servizi richiesti, numero di partecipanti, note e cliente committente.}
+    {Registra la scheda evento nello stato \emph{bozza}, senza ancora
+     alcun servizio associato.}
+
+  \ucstep{2}
+    {Opzionalmente verifica lo stato della cucina.}
+    {Fornisce gli impegni della cucina nei giorni richiesti dall'evento.}
+
+  \ucstep{3}
+    {Aggiunge un servizio specificando: tipo di servizio, data (rispetto
+     all'inizio dell'evento), ora di inizio, ora di fine e numero di
+     commensali.}
+    {Registra il nuovo servizio, associandolo all'evento.}
+
+  \ucstep{4}
+    {Opzionalmente inserisce il turno di servizio corrispondente al
+     servizio appena creato, specificando il tempo aggiuntivo di
+     preparazione (prima) e di rigoverno (dopo) rispetto alla fascia
+     oraria del servizio.}
+    {Registra il turno di servizio, calcolando gli orari a partire
+     dalle ore di inizio e fine del servizio e dai tempi aggiuntivi
+     indicati.}
+
+  \ucflow{Ripete i passi~3 e~4 per ogni servizio dell'evento (almeno una volta).}
+
+  \ucstep{5}
+    {Assegna uno chef all'evento.}
+    {Registra l'assegnazione dello chef.}
+
+  \ucstep{6}
+    {Consulta il menù proposto dallo chef per il servizio.}
+    {Fornisce il menù proposto per il servizio.}
+
+  \ucstep{7}
+    {Opzionalmente approva il menù.}
+    {Registra l'approvazione. Quando i menù di tutti i servizi
+     dell'evento sono stati approvati, l'evento passa allo stato
+     \emph{in corso}. L'evento non è più eliminabile, ma può essere
+     annullato.}
+
+  \ucflow{Ripete i passi~6 e~7 per ogni servizio dell'evento.}
+
+  \ucstep{8}
+    {Sceglie il personale per il turno indicando il ruolo
+     di ciascun membro.}
+    {Registra le assegnazioni di ruolo per il turno.}
+
+  \ucflow{Ripete il passo~8 per ogni turno di servizio dell'evento.}
+
+  \ucstep{9}
+    {Chiude l'evento aggiungendo note finali e allegando eventuale
+     documentazione.}
+    {Registra l'evento nello stato \emph{terminato}.}
+
+  \ucflow{Termina il caso d'uso.}
+\uctableend
+
+% ─── Eccezione 1a ───────────────────────────────────────────
+\exceptionhead{Eccezione 1a}
+
+\uctablebegin
+  \ucexstep{1a.1}
+    {Specifica una data di inizio a meno di due settimane dalla data
+     corrente (soglia maggiore, a discrezione dell'organizzatore, per
+     eventi di grandi dimensioni --- 50 o più partecipanti --- o che
+     si estendono su più giornate).}
+    {Segnala che il preavviso non è sufficiente per accettare la
+     commessa e richiede l'inserimento di una data valida.}
+  \ucflow{Torna al passo~1 (l'attore modifica la data e riprova).}
+\uctableend
+
+% ─── Estensione 1b ──────────────────────────────────────────
+\extensionhead{Estensione 1b}
+
+\uctablebegin
+  \ucstep{1b.1}
+    {Invece di creare un nuovo evento, seleziona una scheda evento già
+     esistente (in stato \emph{bozza}, \emph{in corso}, \emph{terminato}
+     o \emph{annullato}).}
+    {Fornisce la scheda dell'evento con i dati e lo stato corrente.}
+  \ucflow{L'attore sceglie tra:
+    \begin{itemize}[nosep,leftmargin=1.2em]
+      \item Semplice consultazione $\to$ Termina il caso d'uso.
+      \item Riprendere la pianificazione $\to$ Prosegue al passo~2.
+      \item Modificare i dati $\to$ Vai all'Estensione~1d.
+      \item Eliminare l'evento $\to$ Vai all'Estensione~1e.
+      \item Annullare l'evento $\to$ Vai all'Estensione~1f.
+    \end{itemize}}
+\uctableend
+
+% ─── Estensione 1c ──────────────────────────────────────────
+\newpage
+\extensionhead{Estensione 1c}
+
+\uctablebegin
+  \ucstep{1c.1}
+    {Specifica che l'evento è ricorrente, indicando la frequenza e,
+     in alternativa, la data di conclusione oppure il numero di
+     occorrenze.}
+    {Crea il capofila e tutte le istanze corrispondenti alla ricorrenza
+     (ancora senza servizi). Finché il capofila è in fase di
+     costruzione, le istanze condividono le sue stesse
+     impostazioni di default; sono comunque visibili e modificabili
+     singolarmente fin da subito.}
+  \ucflow{Prosegue al passo~2.}
+\uctableend
+
+% ─── Estensione 1d ──────────────────────────────────────────
+\extensionhead{Estensione 1d}
+
+\uctablebegin
+  \ucstep{1d.1}
+    {Se l'evento è in stato \emph{bozza}: modifica luogo, data di
+     inizio, durata, numero di servizi richiesti, numero di partecipanti,
+        cliente, note, oppure aggiunge o rimuove un servizio.}
+    {Registra le modifiche consentite per lo stato corrente.}
+  \ucstep{1d.2}
+    {Se l'evento è in stato \emph{in corso}: modifica solo il numero di
+     partecipanti o le note.}
+    {Registra le modifiche consentite per lo stato corrente.}
+  \ucflow{Prosegue al passo~2.}
+\uctableend
+
+\exceptionhead{Eccezione 1d.1a}
+
+\uctablebegin
+  \ucexstep{1d.1a.1}
+    {Tenta di modificare un evento nello stato \emph{annullato} o
+     \emph{terminato}.}
+    {L'evento non è più modificabile. Segnala l'errore.}
+  \ucflow{Termina il caso d'uso.}
+\uctableend
+
+\exceptionhead{Eccezione 1d.2a}
+
+\uctablebegin
+  \ucexstep{1d.2a.1}
+    {Modifica il numero di partecipanti (evento \emph{in corso}) con una
+     variazione superiore al 30\% rispetto al valore iniziale.}
+    {Segnala che potrebbe essere addebitata una penale al cliente
+     (l'eventuale deroga, ad es. per un cliente affezionato, resta una
+     decisione dell'organizzatore, non vincolata dal sistema).
+     Registra le modifiche.}
+  \ucflow{Termina il caso d'uso.}
+\uctableend
+
+% ─── Estensione 1e ──────────────────────────────────────────
+\extensionhead{Estensione 1e}
+
+\uctablebegin
+  \ucstep{1e.1}
+    {Elimina un evento in stato \emph{bozza}.}
+    {Elimina la scheda e tutti i servizi associati.}
+  \ucflow{Termina il caso d'uso.}
+\uctableend
+
+\exceptionhead{Eccezione 1e.1a}
+
+\uctablebegin
+  \ucexstep{1e.1a.1}
+    {Elimina un evento non in stato \emph{bozza}.}
+    {L'evento non è eliminabile. Segnala
+     l'errore e propone l'annullamento.}
+  \ucflow{Termina il caso d'uso.}
+\uctableend
+
+% ─── Estensione 1f ──────────────────────────────────────────
+\extensionhead{Estensione 1f}
+
+\uctablebegin
+  \ucstep{1f.1}
+    {Annulla l'evento.}
+    {Registra lo stato \emph{annullato}; libera tutto il personale
+     assegnato ai turni di servizio.}
+  \ucflow{Termina il caso d'uso.}
+\uctableend
+
+\exceptionhead{Eccezione 1f.1a}
+
+\uctablebegin
+  \ucexstep{1f.1a.1}
+    {Annulla l'evento a meno di una settimana dalla data.}
+    {Segnala che verrà addebitata una penale al cliente. Registra lo
+     stato \emph{annullato} e libera il personale.}
+  \ucflow{Termina il caso d'uso.}
+\uctableend
+
+\exceptionhead{Eccezione 1f.1b}
+
+\uctablebegin
+  \ucexstep{1f.1b.1}
+    {Tenta di annullare un evento che non è in stato \emph{in corso}
+     (ancora in \emph{bozza}, oppure già \emph{annullato} o
+     \emph{terminato}).}
+    {L'evento non è annullabile. Segnala l'errore; se l'evento è in
+     \emph{bozza}, propone l'eliminazione.}
+  \ucflow{Termina il caso d'uso.}
+\uctableend
+
+% ─── Estensione 1g ──────────────────────────────────────────
+\extensionhead{Estensione 1g}
+
+\uctablebegin
+  \ucstep{1g.1}
+    {L'attore seleziona un'istanza dell'evento ricorrente con l'intento
+    di applicarvi una modifica, un annullamento o un'eliminazione.}
+    {Chiede se l'operazione deve essere applicata solo all'istanza
+     corrente oppure a tutte le istanze ancora modificabili della
+     ricorrenza.}
+  \ucstep{1g.2}
+    {Sceglie \emph{solo questa istanza} oppure
+     \emph{tutte le istanze}.}
+    {Esegue l'operazione sull'istanza singola, o su ogni istanza della
+     ricorrenza su cui l'operazione è consentita.}
+  \ucflow{Termina il caso d'uso.}
+\uctableend
+
+% ─── Estensione 1h ──────────────────────────────────────────
+\extensionhead{Estensione 1h}
+
+\uctablebegin
+  \ucstep{1h.1}
+    {Modifica le regole di ripetizione dell'evento: la frequenza e/o,
+     in alternativa tra loro, la data di conclusione oppure il numero
+     di occorrenze.}
+    {Le istanze già in calendario restano invariate. Eventuali nuove
+     istanze vengono create sul modello del capofila; eventuali istanze
+     in eccesso vengono eliminate.}
+  \ucflow{Termina il caso d'uso.}
+\uctableend
+
+% ─── Estensione 1i ──────────────────────────────────────────
+\extensionhead{Estensione 1i}
+
+\uctablebegin
+  \ucstep{1i.1}
+    {Annulla un singolo servizio dell'evento.}
+    {Registra il servizio nello stato \emph{annullato}; libera il
+     personale assegnato al relativo turno di servizio. Segnala la
+     possibilità di una penale al cliente.}
+  \ucflow{Termina il caso d'uso.}
+\uctableend
+
+\exceptionhead{Eccezione 1i.1a}
+
+\uctablebegin
+  \ucexstep{1i.1a.1}
+    {Annulla un servizio già annullato o terminato.}
+    {Il servizio non è annullabile. Segnala l'errore.}
+  \ucflow{Termina il caso d'uso.}
+\uctableend
+
+% ─── Eccezione 3a ───────────────────────────────────────────
+\exceptionhead{Eccezione 3a}
+
+\uctablebegin
+  \ucexstep{3a.1}
+    {Specifica per il servizio una data/fascia oraria antecedente alla
+     data corrente, oppure completamente al di fuori dell'intervallo di
+     date previsto per l'evento.}
+    {Segnala l'errore e richiede l'inserimento di un orario valido. Il
+     servizio non viene registrato.}
+  \ucflow{Torna al passo~3 (l'attore corregge l'orario e riprova).}
+\uctableend
+
+% ─── Estensione 5a ──────────────────────────────────────────
+\extensionhead{Estensione 5a}
+
+\uctablebegin
+  \ucstep{5a.1}
+    {Opzionalmente, prima di completare l'approvazione dei menù di tutti i servizi
+     (passo~7), si può assegnare già il personale per uno o più turni di
+     servizio, indicando il ruolo di ciascun membro.}
+    {Registra le assegnazioni di ruolo per il turno, mantenendole valide
+     anche se il menù del relativo servizio non è ancora stato
+     approvato. Predispone inoltre le assegnazioni affinché, una volta
+     noti i menù, l'organizzatore possa completarle o rettificarle
+     (ad es. liberando il personale risultato in eccesso) utilizzando
+     i consueti passi successivi.}
+  \ucflow{Prosegue al passo~6.}
+\uctableend
+
+\exceptionhead{Eccezione 5b}
+
+\uctablebegin
+  \ucexstep{5b.1}
+    {Tenta di assegnare uno chef che, nelle date dell'evento, risulta
+     già impegnato su altri eventi che non gli consentono di prendere
+     in carico nuovo lavoro.}
+    {Segnala che lo chef non è disponibile e richiede di selezionarne
+     un altro. Lo chef non viene assegnato.}
+  \ucflow{Torna al passo~5 (l'attore sceglie un altro chef).}
+\uctableend
+
+% ─── Estensione 7a ──────────────────────────────────────────
+\extensionhead{Estensione 7a}
+
+\uctablebegin
+  \ucstep{7a.1}
+    {Prima di approvare il menù di un servizio, propone modifiche
+     (aggiunta o rimozione di piatti) a quel menù.}
+    {Registra la proposta come modifica limitata al servizio, senza
+     modificare il menù originale.}
+  \ucflow{Torna al passo~6, per lo stesso servizio.}
+\uctableend
+
+\exceptionhead{Eccezione 7a.1a}
+
+\uctablebegin
+  \ucexstep{7a.1a.1}
+    {Propone una modifica (aggiunta o rimozione di voci) per un menù
+     che ha già approvato in precedenza e che è già stato inoltrato
+     alla cucina per la lavorazione.}
+    {Blocca l'operazione, segnalando che il menù è già confermato.}
+  \ucflow{Torna al passo~6.}
+\uctableend
+
+\exceptionhead{Eccezione 7b}
+
+\uctablebegin
+  \ucexstep{7b.1}
+    {Tenta di approvare il menù di un servizio per cui lo chef
+     assegnato non ha ancora inserito alcuna proposta.}
+    {Segnala l'impossibilità di procedere con l'approvazione per
+     mancanza del menù.}
+  \ucflow{Torna al passo~6.}
+\uctableend
+
+% ─── Estensione 8a ──────────────────────────────────────────
+\extensionhead{Estensione 8a}
+
+\uctablebegin
+  \ucstep{8a.1}
+    {Assegna un cuoco al turno di servizio, poiché il menù prevede ricette da
+     completare in loco.}
+    {Registra l'assegnazione del cuoco al turno specificato.}
+  \ucflow{Torna al passo~8.}
+\uctableend
+
+\exceptionhead{Eccezione 8a.1a}
+
+\uctablebegin
+  \ucexstep{8a.1a.1}
+    {Tenta di assegnare un cuoco che non ha inserito la propria
+     disponibilità per quella fascia oraria, oppure che è già assegnato
+     a un altro servizio svolto in parallelo in un'altra sede.}
+    {Segnala che il cuoco non è disponibile o è in conflitto, bloccando
+     l'assegnazione.}
+  \ucflow{Torna al passo~8.}
+\uctableend
+
+% ─── Estensione 8b ──────────────────────────────────────────
+\extensionhead{Estensione 8b}
+
+\uctablebegin
+  \ucstep{8b.1}
+    {Rimuove un membro del personale da un turno di servizio.}
+    {Registra la rimozione dell'assegnazione.}
+  \ucflow{Torna al passo~8.}
+\uctableend
+
+\exceptionhead{Eccezione 8b.1a}
+
+\uctablebegin
+  \ucexstep{8b.1a.1}
+    {Tenta di rimuovere un membro del personale da un turno di servizio
+     già svolto o attualmente in corso di svolgimento.}
+    {L'assegnazione non può più essere annullata. Segnala l'errore.}
+  \ucflow{Torna al passo~8.}
+\uctableend
+
+\exceptionhead{Eccezione 8c}
+
+\uctablebegin
+  \ucexstep{8c.1}
+    {Tenta di assegnare al turno un membro del personale che non ha
+     inserito la propria disponibilità per quella fascia oraria, oppure
+     che è già assegnato a un altro servizio svolto in parallelo in
+     un'altra sede.}
+    {Segnala che il dipendente non è disponibile o è in conflitto,
+     bloccando l'assegnazione.}
+  \ucflow{Torna al passo~8.}
+\uctableend
+
+% ─── Eccezione 9a ───────────────────────────────────────────
+\exceptionhead{Eccezione 9a}
+
+\uctablebegin
+  \ucexstep{9a.1}
+    {Tenta di chiudere l'evento aggiungendo la documentazione finale,
+     ma la data/orario dell'ultimo servizio previsto non è ancora
+     passata.}
+    {Blocca la chiusura, ricordando che ci sono ancora turni di
+     servizio da svolgere.}
+  \ucflow{Torna al passo~9 (l'attore ritenta la chiusura una volta
+    conclusi i turni rimanenti).}
+\uctableend

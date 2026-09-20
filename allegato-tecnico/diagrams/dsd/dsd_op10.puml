@@ -1,0 +1,57 @@
+@startuml dsd_op10
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "e:Event" as ev
+participant "t:ServiceShift" as shift
+participant "cuoco:User" as usr
+participant "c:Cook" as cook
+participant "eventManager.eventReceivers:\nEventReceivers" as er
+
+hide footbox
+
+ui -> em : assegnaCuocoATurno(turno, cuoco)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> em : e = currentEvent
+
+alt turno non appartiene a e
+  em --> ui : throw UseCaseLogicException("turno non valido")
+end
+
+em -> usr : isCook()
+usr --> em : isCook
+
+alt isCook = false
+  em --> ui : throw UseCaseLogicException("l'utente indicato non e' un cuoco")
+end
+
+create cook
+em -> cook : create(cuoco)
+cook --> em : c
+
+em -> cook : isDisponibile(turno)
+cook --> em : disponibile
+
+alt disponibile = false
+  em --> ui : throw UseCaseLogicException("**8a.1a.1** cuoco non disponibile")
+end
+
+em -> shift : setCuocoDiSupporto(c)
+shift --> em
+
+em -> em : notifyEventModified(e)
+loop per ogni receiver in eventReceivers
+  em -> er : updateEventModified(e)
+end
+
+em --> ui : [ok — cuoco assegnato al turno]
+
+@enduml

@@ -1,0 +1,42 @@
+@startuml dsd_op1
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "e:Event" as ev
+participant "eventManager.eventReceivers:\nEventReceivers" as er
+
+hide footbox
+
+ui -> em : creaSchedaEvento(luogo, dataInizio, durata,\n  numeroServiziRichiesti, numeroPartecipanti, note, cliente)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> em : soglia = calcolaSogliaPreavviso(numeroPartecipanti, durata)
+
+alt (dataInizio - dataCorrente) < soglia
+  em --> ui : throw UseCaseLogicException("**1a.1** preavviso insufficiente")
+end
+
+em -> em : organizzatoreCorrente = user.asOrganizer()
+
+create ev
+em -> ev : create(luogo, dataInizio, durata,\n  numeroServiziRichiesti, numeroPartecipanti, note, cliente, organizzatoreCorrente)
+ev --> em : e
+
+em -> ev : setStato(EventStatus.BOZZA)
+em -> em : currentEvent = e
+
+em -> em : notifyEventCreated(e)
+loop per ogni receiver in eventReceivers
+  em -> er : updateEventCreated(e)
+end
+
+em --> ui : [ok]
+
+@enduml

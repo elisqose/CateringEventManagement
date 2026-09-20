@@ -1,0 +1,48 @@
+@startuml dsd_op15
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "e:Event" as ev
+participant "eventManager.eventReceivers:\nEventReceivers" as er
+
+hide footbox
+
+ui -> em : modificaSchedaEventoInCorso(numeroPartecipanti?, note?)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> em : e = currentEvent
+
+em -> ev : getStato()
+ev --> em : stato
+
+alt stato != EventStatus.IN_CORSO
+  em --> ui : throw UseCaseLogicException("**1d.1a.1** evento non più modificabile")
+end
+
+alt numeroPartecipanti fornito
+  em -> ev : isVariazionePartecipantiEccessiva(numeroPartecipanti)
+  ev --> em : variazioneEccessiva
+
+  alt variazioneEccessiva = true
+    em --> ui : **[AVVISO] 1d.2a.1** possibile penale al cliente — prosegue
+  end
+end
+
+em -> ev : aggiornaInCorso(numeroPartecipanti?, note?)
+ev --> em
+
+em -> em : notifyEventModified(e)
+loop per ogni receiver in eventReceivers
+  em -> er : updateEventModified(e)
+end
+
+em --> ui : [ok — modifiche registrate]
+
+@enduml

@@ -1,0 +1,450 @@
+
+% ─── Attori ───────────────────────────────────────────────────
+\section*{Attori}
+
+\begin{longtable}{L{3.5cm} L{8.5cm} L{3cm}}
+\toprule
+\textbf{Termine} & \textbf{Descrizione} & \textbf{Sinonimi} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+Chef
+& Stabilisce il \textbf{menù} per gli \textbf{eventi} e ne supervisiona
+  la preparazione.
+& — \\
+\addlinespace
+
+Cliente
+& Colui che commissiona l'organizzazione di un \textbf{evento}.
+& — \\
+\addlinespace
+
+Cuoco
+& Prepara il \textbf{cibo}.
+& — \\
+\addlinespace
+
+Organizzatore
+& La persona che gestisce il \textbf{personale} e gli \textbf{eventi}.
+& — \\
+\addlinespace
+
+Personale
+& La parola \emph{personale} è usata in modo ambiguo nel testo per intendere
+  talvolta tutti i dipendenti (\textbf{chef}, \textbf{cuochi},
+  \textbf{personale di servizio}), talvolta soltanto i dipendenti soggetti
+  a \textbf{turni} (\textbf{cuochi} e \textbf{personale di servizio}).
+  In presenza di questo termine consultare il cliente per disambiguare.
+& — \\
+\addlinespace
+
+Personale di Servizio
+& Le persone (maître e camerieri) che si occupano del \textbf{servizio}
+  durante l'\textbf{evento} stesso.
+& Staff di supporto \\
+\addlinespace
+
+Utente
+& Generico utilizzatore dell'applicazione (ha necessariamente un ruolo fra
+  \textbf{organizzatore}, \textbf{chef}, \textbf{cuoco},
+  \textbf{personale di servizio}).
+& — \\
+
+\end{longtable}
+
+% ─── Dominio ──────────────────────────────────────────────────
+\section*{Dominio dell'Applicazione}
+
+\begin{longtable}{L{3.5cm} L{8.5cm} L{3cm}}
+\toprule
+\textbf{Termine} & \textbf{Descrizione} & \textbf{Sinonimi} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+Annullamento di un evento
+& Un \textbf{evento} può essere annullato in qualsiasi fase della sua
+  predisposizione. Se l'annullamento avviene a ridosso della data
+  dell'\textbf{evento} (tipicamente a meno di una settimana), al
+  \textbf{cliente} viene addebitata una \textbf{penale}.
+& — \\
+\addlinespace
+
+Autore (di una ricetta)
+& Chi ha ideato la \textbf{ricetta}.
+& — \\
+\addlinespace
+
+Capofila (di un evento ricorrente)
+& L'\textbf{evento ricorrente} da cui le singole \textbf{istanze}
+  ereditano le impostazioni di default (luogo, durata, numero di
+  servizi richiesti, numero di partecipanti, note e cliente). Le modifiche al
+  capofila possono essere propagate a tutte le istanze ancora
+  modificabili; ogni \textbf{istanza} può tuttavia essere modificata
+  individualmente senza alterare le altre.
+& — \\
+\addlinespace
+
+Cibo
+& Piatti preparati (seguendo una \textbf{ricetta} del \textbf{ricettario})
+  per essere consumati durante un \textbf{servizio}.
+& Pietanze \\
+\addlinespace
+
+Compito (di cucina)
+& Attività assegnata dallo \textbf{chef} ai \textbf{cuochi} durante la fase
+  di \textbf{lavoro preparatorio}, che consiste nello svolgimento di uno o
+  più \textbf{passi} di una \textbf{ricetta} o \textbf{preparazione} volti
+  alla realizzazione di un \textbf{piatto} o di un \textbf{preparato
+  intermedio} in vista di un \textbf{servizio} che deve essere effettuato.
+& — \\
+\addlinespace
+
+Conclusione (di un evento ricorrente)
+& La data fino a cui l'\textbf{evento ricorrente} si ripete, oppure un
+  numero massimo di ripetizioni che avranno luogo.
+& — \\
+\addlinespace
+
+Disponibilità
+& Indicazione fornita da un \textbf{cuoco} o dal \textbf{personale di
+  servizio} riguardo la propria presenza per un \textbf{turno}. La
+  disponibilità può essere revocata finché la persona non viene
+  effettivamente convocata/assegnata al turno da \textbf{chef} od
+  \textbf{organizzatore}, momento in cui diventa un vincolo non più
+  ritirabile.
+& — \\
+\addlinespace
+
+Documentazione
+& Informazioni e allegati inseriti dall'\textbf{organizzatore} al momento
+  del passaggio dell'\textbf{evento} allo stato \emph{terminato}.
+& Note di chiusura \\
+\addlinespace
+
+Dose (di un ingrediente)
+& Indica la quantità di ogni \textbf{ingrediente} (di base o preparati)
+  necessario alla preparazione di un \textbf{piatto}.
+& — \\
+\addlinespace
+
+Eliminazione di un evento
+& Rimozione definitiva della \textbf{scheda di un evento} e di tutti i suoi
+  dati. Un \textbf{evento} può essere eliminato solo quando si trova in
+  stato di \emph{bozza}, ossia prima che i \textbf{menù} vengano
+  approvati e i lavori abbiano inizio. Una volta che l'\textbf{evento}
+  è \emph{in corso} non è più eliminabile, ma può essere
+  \textbf{annullato} (si veda \emph{annullamento di un evento}).
+& — \\
+\addlinespace
+
+Evento
+& Contesto in cui viene fornito il \textbf{servizio} di catering. Prevede due
+  momenti diversi: il \textbf{lavoro preparatorio} e il \textbf{servizio}.
+  Se ne fa carico un \textbf{organizzatore}, mentre la cucina è affidata a
+  uno \textbf{chef}.
+  Un evento può essere \emph{semplice}, e prevedere un singolo \textbf{servizio},
+  o \emph{complesso}, prevedendo più \textbf{servizi} (pranzo e cena, colazione
+  e pranzo, coffee-break mattino e pomeriggio, ecc.) in una o più giornate.
+  Un evento attraversa i seguenti stati:
+  \begin{itemize}[nosep,leftmargin=*]
+    \item \emph{bozza}: l'\textbf{organizzatore} sta definendo la
+          \textbf{scheda di un evento}; l'evento è eliminabile;
+    \item \emph{in corso}: i \textbf{menù} sono stati approvati e i lavori
+          hanno avuto inizio; l'evento non è più eliminabile, ma può essere
+          annullato;
+    \item \emph{terminato}: l'\textbf{organizzatore} ha chiuso l'evento al
+          termine del \textbf{servizio};
+    \item \emph{annullato}: l'evento è stato interrotto prima della sua
+          conclusione naturale (si veda \textbf{annullamento di un evento}).
+  \end{itemize}
+& — \\
+\addlinespace
+
+Evento ricorrente
+& \textbf{Evento} che si ripete con una data regolarità. In particolare è
+  rilevante:
+  \begin{itemize}[nosep,leftmargin=*]
+    \item ogni quanto l'evento si ripete (\textbf{frequenza});
+    \item la data fino a cui si ripete, o il numero di occorrenze
+          (\textbf{conclusione}).
+  \end{itemize}
+& — \\
+\addlinespace
+
+Frequenza di un evento ricorrente
+& Intervallo di tempo dopo cui l'\textbf{evento ricorrente} si ripete.
+& — \\
+\addlinespace
+
+Gestione del servizio
+& La gestione dei \textbf{servizi} che compongono un \textbf{evento} viene
+  affidata a un \textbf{organizzatore}. Essa prevede:
+  \begin{itemize}[nosep,leftmargin=*]
+    \item scegliere il \textbf{personale di servizio} per ogni
+          \textbf{turno di servizio} associato all'\textbf{evento},
+          indicando il \textbf{ruolo} che avrà in quella particolare
+          situazione;
+    \item opzionalmente, l'assegnamento di un \textbf{cuoco} a quello stesso
+          \textbf{servizio} se il \textbf{menù} prevede \textbf{ricette}
+          che lo rendono necessario.
+  \end{itemize}
+& — \\
+\addlinespace
+
+Ingrediente
+& Materia prima per preparare un \textbf{piatto}. Può essere \emph{di base}
+  (scelto da un elenco di partenza corrispondente a ciò che si trova in
+  dispensa) oppure un \textbf{preparato intermedio} realizzato in cucina
+  dagli stessi \textbf{cuochi}.
+& — \\
+\addlinespace
+
+Insieme delle istruzioni (di una ricetta)
+& Spiegazione di come trasformare gli \textbf{ingredienti} di partenza in un
+  prodotto finito. Sono divise in due sezioni: la parte realizzabile in
+  anticipo e quella da realizzare all'ultimo sul posto dell'evento. Ogni
+  singola istruzione è rappresentata da un \textbf{passo}.
+& — \\
+\addlinespace
+
+Istanza (di evento)
+& Singola edizione di un \textbf{evento ricorrente}. Di default
+  eredita le impostazioni del \textbf{capofila}, ma può essere
+  modificata individualmente senza influenzare le altre istanze
+  della ricorrenza.
+& Occorrenza \\
+\addlinespace
+
+Lavoro di servizio
+& Momento di lavoro che si svolge nel luogo dell'\textbf{evento}, effettuato
+  dal \textbf{personale di servizio} e opzionalmente da \textbf{cuochi} di
+  supporto. È organizzato in \textbf{turni di servizio}.
+& — \\
+\addlinespace
+
+Lavoro preparatorio
+& Momento di lavoro che si svolge in \textbf{sede}, effettuato dai
+  \textbf{cuochi} sotto la supervisione di uno \textbf{chef}. È organizzato
+  in \textbf{turni preparatori}.
+& Preparazione in sede \\
+\addlinespace
+
+Menù
+& Descrive quali piatti vengono proposti in un dato \textbf{servizio}
+  (nell'ambito di un \textbf{evento}). Si compone di diverse \textbf{voci},
+  opzionalmente organizzate in \textbf{sezioni}. Lo \textbf{chef} costruisce
+  i suoi menù a partire dalle \textbf{ricette} del \textbf{ricettario}.
+  Un menù è caratterizzato da informazioni aggiuntive:
+  \begin{itemize}[nosep,leftmargin=*]
+    \item se è consigliata la presenza di un \textbf{cuoco} durante il
+          \textbf{servizio};
+    \item se prevede solo piatti freddi o anche piatti caldi;
+    \item se richiede la disponibilità di una cucina nella \textbf{sede}
+          dell'\textbf{evento};
+    \item se è adeguato per un buffet;
+    \item se può essere fruito senza posate (finger food).
+  \end{itemize}
+  Un menù può essere modificato fintanto che non è utilizzato in alcun
+  \textbf{evento}.
+& — \\
+\addlinespace
+
+Modifica al menù (di un evento)
+& Variazione temporanea proposta dall'\textbf{organizzatore} prima
+  dell'approvazione del \textbf{menù} per un \textbf{evento} (aggiungendo o
+  togliendo piatti). Tali modifiche non alterano il \textbf{menù} originale
+  presente nel \textbf{ricettario}, restano visibili come aggiunte o
+  eliminazioni limitate all'\textbf{evento} in questione e devono essere
+  confermate dallo \textbf{chef}.
+& Proposta di modifica al menù \\
+\addlinespace
+
+Passo
+& Singolo elemento che compone le istruzioni di una \textbf{ricetta}. I passi
+  si dividono in due sezioni: quella dei passi realizzabili in anticipo
+  (durante il \textbf{lavoro preparatorio}) e quella dei passi da effettuare
+  sul posto (durante il \textbf{servizio}).
+& Istruzione \\
+\addlinespace
+
+Penale
+& Sanzione economica addebitata al \textbf{cliente} in caso di
+  \textbf{annullamento di un evento} tardivo (tipicamente a meno di una
+  settimana dall'evento) oppure di modifica sostanziale del numero di
+  partecipanti dopo l'avvio dei lavori. L'\textbf{organizzatore} può, a
+  propria discrezione, concedere deroghe (esenzioni) dalla penale a
+  clienti affezionati.
+& — \\
+\addlinespace
+
+Piatto
+& Risultato dell'esecuzione di una \textbf{ricetta}, che può essere servito al
+  \textbf{cliente} in quanto nel suo stato finale.
+& — \\
+\addlinespace
+
+Porzione
+& Quantità indicativa di un \textbf{piatto} finito per una persona.
+& — \\
+\addlinespace
+
+Preparato intermedio
+& Composto realizzato tramite le indicazioni di una \textbf{preparazione}, che
+  diventa \textbf{ingrediente} di un'altra \textbf{preparazione} o di una
+  \textbf{ricetta}.
+& Preparato di base \\
+\addlinespace
+
+Preparazione (nel ricettario)
+& Del tutto analoga a una \textbf{ricetta}, ma descrive come realizzare un
+  \textbf{preparato intermedio} da utilizzare in un'altra \textbf{preparazione}
+  o \textbf{ricetta}. Attraversa gli stessi stati di una \textbf{ricetta}:
+  \begin{itemize}[nosep,leftmargin=*]
+    \item \emph{bozza}: visibile solo al creatore; modificabile ed
+          eliminabile;
+    \item \emph{pubblicata}: visibile a tutti; non più modificabile se in
+          uso, ritirabile solo se non utilizzata.
+  \end{itemize}
+& — \\
+\addlinespace
+
+Procedura (di preparazione)
+& Sequenza di \textbf{passi} indicata da una \textbf{ricetta} (o
+  \textbf{preparazione}) che un \textbf{cuoco} deve eseguire per realizzare
+  il \textbf{piatto} o il \textbf{preparato intermedio}.
+& — \\
+\addlinespace
+
+Proprietario (di una ricetta)
+& Chi ha inserito la \textbf{ricetta} nel \textbf{ricettario}.
+& — \\
+\addlinespace
+
+Raggruppamento di turni
+& Insieme di uno o più \textbf{turni preparatori} per cui il
+  \textbf{personale} fornisce un'unica \textbf{disponibilità}, valida per
+  tutti i turni del raggruppamento o per nessuno; le regole di modifica
+  della disponibilità si applicano all'intero raggruppamento. Può essere
+  \emph{singolo} (raggruppa due o più turni specifici una tantum) o \emph{ricorrente}
+(raggruppa turni che si ripetono con una data periodicità nel tempo).
+& — \\
+\addlinespace
+
+Ricetta
+& Descrive come preparare un \textbf{piatto} da servire a tavola a partire
+  dagli \textbf{ingredienti} (ciascuno con una propria \textbf{dose}) e dalle
+  istruzioni per realizzarla. È caratterizzata da un nome, da un
+  \textbf{proprietario}, opzionalmente da un \textbf{autore}, e può essere
+  accompagnata da una descrizione breve. Ha inoltre un tempo di preparazione
+  e può essere accompagnata da tag (vegetariana, senza latticini, senza uova,
+  senza glutine, vegana).
+  Produce un \textbf{piatto} finito (a differenza di una \textbf{preparazione},
+  che produce un \textbf{preparato intermedio}).
+  Attraversa i seguenti stati:
+  \begin{itemize}[nosep,leftmargin=*]
+    \item \emph{bozza}: visibile solo al creatore; modificabile ed
+          eliminabile;
+    \item \emph{pubblicata}: visibile a tutti; non più modificabile se in
+          uso, ritirabile solo se non utilizzata.
+  \end{itemize}
+& — \\
+\addlinespace
+
+Ricettario
+& Un elenco/raccolta di \textbf{ricette} e \textbf{preparazioni}.
+& — \\
+\addlinespace
+
+Richiesta (di organizzazione)
+& Un \textbf{cliente} commissiona l'organizzazione di un \textbf{evento}
+  all'azienda di catering.
+& — \\
+\addlinespace
+
+Ruolo
+& Specifica mansione assegnata a un membro del \textbf{personale di servizio}
+  in un dato \textbf{servizio}.
+& — \\
+\addlinespace
+
+Scheda di un evento
+& Creata dall'\textbf{organizzatore}, è il documento in cui sono descritte le
+  caratteristiche dell'\textbf{evento}. Riporta informazioni quali:
+  \begin{itemize}[nosep,leftmargin=*]
+    \item luogo;
+    \item date;
+    \item durata;
+    \item numero di persone;
+    \item numero di \textbf{servizi};
+    \item \textbf{cliente}/committente;
+    \item note particolari (opzionale).
+  \end{itemize}
+& — \\
+\addlinespace
+
+Sede
+& Ubicazione della società di catering e delle relative cucine.
+& — \\
+\addlinespace
+
+Sede di un evento
+& Luogo di svolgimento degli \textbf{eventi}.
+& — \\
+\addlinespace
+
+Servizio
+& Attività che consiste nel servire ai partecipanti i piatti e le bevande
+  preparati. Include l'allestimento preliminare e il rigoverno al termine.
+  Può andare dal semplice buffet all'allestimento di una sala ristorante.
+  Uno stesso \textbf{evento} può prevedere più servizi, anche in
+  \textbf{sedi} diverse. Ciascun servizio avrà una precisa fascia oraria,
+  e un proprio \textbf{menù} e un proprio \textbf{personale di servizio}.
+  Un singolo servizio appartenente a un \textbf{evento} può essere
+  annullato indipendentemente dagli altri servizi, assumendo lo stato di
+  \emph{annullato} per permettere di liberare il personale assegnato.
+& — \\
+\addlinespace
+
+Sezione di un menù
+& Partizionamento (opzionale) di un \textbf{menù}. Ad esempio: primi,
+  secondi, dolci sono sezioni.
+& — \\
+\addlinespace
+
+Turno
+& Periodo di attività di una persona caratterizzato da una data, un luogo di
+  svolgimento e da una fascia oraria. I turni sono di due tipi:
+  \textbf{turni preparatori} e \textbf{turni di servizio}. Un turno può
+  essere indicato come ``completo'' se la cucina e lo staff per quel turno
+  sono completamente impegnati.
+& — \\
+\addlinespace
+
+Turno preparatorio
+& \textbf{Turno} in cui i \textbf{cuochi} lavorano a preparare le pietanze.
+  I turni preparatori possono essere raggruppati in un
+  \textbf{raggruppamento di turni}: il \textbf{personale} dà la propria
+  \textbf{disponibilità} per tutti i turni del raggruppamento o per nessuno.
+& Turno di cucina \\
+\addlinespace
+
+Turno di servizio
+& \textbf{Turno} in cui lavorano il \textbf{personale di servizio} e i
+  \textbf{cuochi} per realizzare il \textbf{servizio} stesso. Può
+  specificare un tempo aggiuntivo rispetto agli orari del \textbf{servizio}
+  effettivo per la preparazione (prima) e per rigovernare (dopo).
+& — \\
+\addlinespace
+
+Voce di un menù
+& Singolo elemento di un \textbf{menù}. Può appartenere a una \textbf{sezione}
+  se il \textbf{menù} è diviso in sezioni. Ogni voce fa riferimento a una
+  \textbf{ricetta} nel \textbf{ricettario}, ma il testo della voce può essere
+  diverso dal nome della \textbf{ricetta}.
+& — \\
+
+\end{longtable}

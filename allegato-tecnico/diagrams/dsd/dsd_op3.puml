@@ -1,0 +1,82 @@
+@startuml dsd_op3
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "e:Event" as ev
+participant "s:Service" as srv
+participant "s2:Service" as s2
+participant "eventManager.eventReceivers:\nEventReceivers" as er
+
+hide footbox
+
+ui -> em : approvaMenu(servizio, menu)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> em : e = currentEvent
+
+em -> ev : getStato()
+ev --> em : statoEvento
+
+alt statoEvento != EventStatus.BOZZA
+  em --> ui : throw UseCaseLogicException("evento non più modificabile")
+end
+
+em -> ev : getServizi()
+ev --> em : servizi
+
+alt servizio not in servizi
+  em --> ui : throw UseCaseLogicException("servizio non appartenente all'evento corrente")
+end
+
+em -> srv : getMenu()
+srv --> em : menuCorrente
+
+alt menuCorrente == null
+  em --> ui : throw UseCaseLogicException("**7b.1** menù non ancora proposto dallo chef")
+end
+
+alt menu != menuCorrente
+  em --> ui : throw UseCaseLogicException("il menù indicato non è quello scelto per il servizio")
+end
+
+em -> srv : getStato()
+srv --> em : statoServizio
+
+alt statoServizio != ServiceStatus.IN_PREPARAZIONE
+  em --> ui : throw UseCaseLogicException("impossibile procedere con l'approvazione:\nservizio già confermato, annullato o terminato")
+end
+
+em -> srv : confermaMenu()
+srv -> srv : setStato(ServiceStatus.CONFERMATO)
+srv --> em
+
+em -> ev : getServizi()
+ev --> em : servizi
+
+em -> em : tuttiConfermati = true
+loop per ogni s2 in servizi
+  em -> s2 : getStato()
+  s2 --> em : stato
+  alt stato != ServiceStatus.CONFERMATO
+    em -> em : tuttiConfermati = false
+  end
+end
+
+alt tuttiConfermati = true
+  em -> ev : setStato(EventStatus.IN_CORSO)
+  em -> em : notifyEventModified(e)
+  loop per ogni receiver in eventReceivers
+    em -> er : updateEventModified(e)
+  end
+end
+
+em --> ui : [ok]
+
+@enduml

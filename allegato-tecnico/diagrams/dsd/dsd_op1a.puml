@@ -1,0 +1,58 @@
+@startuml dsd_op1a
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "er:RecurringEvent" as er
+participant "e:Event" as ev
+participant "eventManager.eventReceivers:\nEventReceivers" as rec
+
+hide footbox
+
+ui -> em : creaSchedaEventoRicorrente(luogo, dataInizio, durata,\n  numeroServiziRichiesti, numeroPartecipanti, note, cliente, tipoFrequenza,\n  dataFine, numeroOccorrenze)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> em : soglia = calcolaSogliaPreavviso(numeroPartecipanti, durata)
+
+alt (dataInizio - dataCorrente) < soglia
+  em --> ui : throw UseCaseLogicException("**1a.1** preavviso insufficiente")
+end
+
+em -> em : freq = costruisciFrequenza(tipoFrequenza, dataFine, numeroOccorrenze)
+
+em -> em : organizzatoreCorrente = user.asOrganizer()
+
+create er
+em -> er : create(luogo, durata,\n  numeroServiziRichiesti, numeroPartecipanti, note, cliente, organizzatoreCorrente, freq)
+er --> em : er
+
+em -> em : dataCorrente = dataInizio
+loop per ogni data calcolata (fino a dataFine / numeroOccorrenze)
+  em -> er : creaEvento(dataCorrente)
+  create ev
+  er -> ev : create(luogo, dataCorrente, durata,\n    numeroServiziRichiesti, numeroPartecipanti, note, cliente, er.organizzatore)
+  ev --> er : e
+  er -> ev : setStato(EventStatus.BOZZA)
+  er --> em : e
+
+  em -> em : notifyEventCreated(e)
+  loop per ogni receiver in eventReceivers
+    em -> rec : updateEventCreated(e)
+  end
+
+  em -> em : dataCorrente = freq.prossimaOccorrenza(dataCorrente)
+end
+
+em -> er : getIstanze()
+er --> em : istanze
+em -> em : currentEvent = istanze[0]
+
+em --> ui : [ok — istanze create e visualizzate]
+
+@enduml

@@ -1,0 +1,54 @@
+@startuml dsd_op4
+skinparam sequenceArrowThickness 2
+
+participant UI as ui
+participant "eventManager:\nEventManager" as em
+participant "userMgr:\nUserManager" as um
+participant "t:ServiceShift" as shift
+participant "personale:User" as usr
+participant "p:ServiceStaff" as staff
+participant "a:ServiceAssignment" as sa
+
+hide footbox
+
+ui -> em : assegnaPersonaleATurno(turno, personale, ruolo)
+em -> um : getCurrentUser()
+um --> em : user
+
+alt !user.isOrganizer()
+  em --> ui : throw UseCaseLogicException
+end
+
+em -> em : e = currentEvent
+
+alt turno non appartiene a e
+  em --> ui : throw UseCaseLogicException("turno non valido")
+end
+
+em -> usr : isServiceStaff()
+usr --> em : isServiceStaff
+
+alt isServiceStaff = false
+  em --> ui : throw UseCaseLogicException("l'utente indicato non fa parte\ndel personale di servizio")
+end
+
+create staff
+em -> staff : create(personale)
+staff --> em : p
+
+em -> staff : isDisponibile(turno)
+staff --> em : disponibile
+
+alt disponibile = false
+  em --> ui : throw UseCaseLogicException("**8c.1** personale non disponibile o in conflitto")
+end
+
+em -> shift : creaIncarico(p, ruolo)
+create sa
+shift -> sa : create(p, ruolo)
+sa --> shift : a
+shift --> em : a
+
+em --> ui : [ok]
+
+@enduml

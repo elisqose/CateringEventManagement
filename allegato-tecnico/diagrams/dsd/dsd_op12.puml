@@ -1,0 +1,94 @@
+  @startuml dsd_op12
+  skinparam sequenceArrowThickness 2
+
+  participant UI as ui
+  participant "eventManager:\nEventManager" as em
+  participant "userMgr:\nUserManager" as um
+  participant "i:Event" as inst
+  participant "er:RecurringEvent" as er
+  participant "i2:Event" as i2
+  participant "cmd:EventCommand" as cmd
+  participant "eventManager.eventReceivers:\nEventReceivers" as rec
+
+  hide footbox
+
+  ui -> em : operaSuIstanza(istanza, cmd, scope)
+  em -> um : getCurrentUser()
+  um --> em : user
+
+  alt !user.isOrganizer()
+    em --> ui : throw UseCaseLogicException
+  end
+
+  em -> inst : getMacroEvento()
+  inst --> em : er
+
+  alt er == null
+    em --> ui : throw UseCaseLogicException("istanza non appartiene a un evento ricorrente")
+  end
+
+  em -> er : getOrganizzatore()
+  er --> em : organizzatore
+
+  em -> em : organizzatoreCorrente = user.asOrganizer()
+
+  alt organizzatore != organizzatoreCorrente
+    em --> ui : throw UseCaseLogicException("l'organizzatore non gestisce l'evento indicato")
+  end
+
+  alt scope = Scope.SINGOLA
+    em -> inst : getStato()
+    inst --> em : stato
+    alt stato != EventStatus.TERMINATO AND stato != EventStatus.ANNULLATO
+      em -> cmd : isApplicabile(inst)
+      cmd --> em : applicabile
+
+      alt applicabile = true
+        em -> inst : eseguiOperazione(cmd)
+        inst --> em
+
+        alt cmd instanceof EliminaEventoCommand
+          em -> em : notifyEventDeleted(inst)
+        else cmd instanceof AnnullaEventoCommand
+          em -> em : notifyEventCancelled(inst)
+        else
+          em -> em : notifyEventModified(inst)
+        end
+        loop per ogni receiver in eventReceivers
+          em -> rec : update...(inst)
+        end
+      end
+    end
+  else scope = Scope.TUTTE
+    em -> er : getIstanze()
+    er --> em : istanze
+
+    loop per ogni i2 in istanze
+      em -> i2 : getStato()
+      i2 --> em : stato
+      alt stato != EventStatus.TERMINATO AND stato != EventStatus.ANNULLATO
+        em -> cmd : isApplicabile(i2)
+        cmd --> em : applicabile
+
+        alt applicabile = true
+          em -> i2 : eseguiOperazione(cmd)
+          i2 --> em
+
+          alt cmd instanceof EliminaEventoCommand
+            em -> em : notifyEventDeleted(i2)
+          else cmd instanceof AnnullaEventoCommand
+            em -> em : notifyEventCancelled(i2)
+          else
+            em -> em : notifyEventModified(i2)
+          end
+          loop per ogni receiver in eventReceivers
+            em -> rec : update...(i2)
+          end
+        end
+      end
+    end
+  end
+
+  em --> ui : [ok — operazione applicata]
+
+  @enduml

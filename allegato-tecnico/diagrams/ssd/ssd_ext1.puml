@@ -1,0 +1,140 @@
+@startuml ssd_ext1
+skinparam sequenceArrowThickness 2
+skinparam sequenceGroupBorderThickness 1
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor "Organizzatore" as org #White
+participant "Sistema" as sys #White
+
+hide footbox
+
+alt #F3FFE3
+  loop #D9E9FF
+    org -> sys : **1**.creaSchedaEvento(luogo, dataInizio, durata, numeroServiziRichiesti, numeroPartecipanti, note, cliente)
+    alt #ECD4FF
+      sys --> org : scheda registrata [stato: bozza]
+    else #ECD4FF
+      sys --> org : **1a.1** preavviso minimo non rispettato, scheda in attesa di data valida
+    end
+  end
+
+else #F3FFE3
+  org -> sys : **1b.1** apriEvento(evento)
+  sys --> org : scheda evento
+  alt #ECD4FF
+  note right of org : semplice consultazione, l'organizzatore legge i dati e chiude la scheda
+    org -[hidden]-> sys
+    destroy org
+  else #ECD4FF
+    alt #FFD9D9
+      alt #FFECC7
+        org -> sys : **1d.1** modificaSchedaEvento(luogo?, dataInizio?, durata?, numeroServiziRichiesti?, numeroPartecipanti?, note?, cliente?)
+        sys --> org : modifiche registrate
+      else #FFECC7
+        org -> sys : **1d.1** aggiungiServizio(tipoServizio, offsetInizio, oraInizio, oraFine, numeroCommensali)
+        sys --> org : servizio aggiunto
+
+      else #FFECC7
+        org -> sys : **1d.1** rimuoviServizio(servizio)
+        sys --> org : servizio rimosso
+      end
+    else #FFD9D9
+      org -> sys : **1d.2** modificaSchedaEventoInCorso(numeroPartecipanti?, note?)
+      alt #FFF5CC
+        sys --> org : modifiche registrate
+      else #FFF5CC
+        sys --> org : **1d.2a.1** possibile penale al cliente, modifiche registrate
+        destroy sys
+      end
+    else #FFD9D9
+      sys --> org : **1d.1a.1** evento non più modificabile
+      destroy sys
+    end
+  else #ECD4FF
+    org -> sys : **1e.1** eliminaEvento(evento)
+    alt #FFD9D9
+      sys --> org : evento eliminato
+      destroy sys
+    else #FFD9D9
+      sys --> org : **1e.1a.1** evento non eliminabile, propone annullamento
+      destroy sys
+    end
+  else #ECD4FF
+    org -> sys : **1f.1** annullaEvento(evento)
+    alt #FFD9D9
+      sys --> org : evento annullato, personale liberato
+      destroy sys
+    else #FFD9D9
+      sys --> org : **1f.1a.1** evento annullato, personale liberato, penale addebitata al cliente
+      destroy sys
+    else #FFD9D9
+      sys --> org : **1f.1b.1** evento non annullabile se in bozza, propone eliminazione
+      destroy sys
+    end
+  end
+
+else #F3FFE3
+  org -> sys : **1c.1** creaSchedaEventoRicorrente(luogo, dataInizio, durata, numeroServiziRichiesti,\n numeroPartecipanti, note, cliente, tipoFrequenza, dataFine?, numeroOccorrenze?)
+  sys --> org : capofila e istanze della ricorrenza creati (senza servizi) e visualizzati
+
+else #F3FFE3
+  org -> sys : **1g.1** selezionaIstanza(istanza)
+  sys --> org : richiesta scope (solo questa istanza o tutte le istanze modificabili)
+  org -> sys : **1g.2** operaSuIstanza(istanza, cmd, scope)
+  sys --> org : operazione applicata (istanza singola, oppure tutte le istanze su cui è consentita)
+  destroy sys
+
+else #F3FFE3
+  org -> sys : **1h.1** modificaRicorrenza(er, tipoFrequenza?, dataFine?, numeroOccorrenze?)
+  sys --> org : ricorrenza aggiornata; istanze già in calendario invariate, istanze mancanti create, istanze in eccesso eliminate
+  destroy sys
+
+else #F3FFE3
+  org -> sys : **1i.1** annullaServizio(servizio)
+  alt #ECD4FF
+    sys --> org : servizio annullato, personale liberato, possibile penale al cliente
+    destroy sys
+  else
+    sys --> org : **1i.1a.1** il servizio non è annullabile
+    destroy sys
+  end
+end
+
+opt
+  org -> sys : 2.visualizzaStatoCucina()
+  sys --> org : impegni della cucina nei giorni richiesti
+end
+
+loop
+  org -> sys : 3.aggiungiServizio(tipoServizio, offsetInizio, oraInizio, oraFine, numeroCommensali)
+  sys --> org : servizio aggiunto
+opt
+  org -> sys : 4.inserisciTurnoServizio(servizio, tempoPreparazione, tempoRigoverno)
+  sys --> org : turno di servizio registrato
+  end
+end
+
+org -> sys : 5.assegnaChef(chef)
+sys --> org : chef assegnato
+
+loop
+  org -> sys : 6.consultaMenuServizio(servizio)
+  sys --> org : menù proposto dallo chef per il servizio
+    opt
+  org -> sys : 7.approvaMenu(servizio, menu)
+  sys --> org : approvazione registrata
+  end
+end
+
+loop
+  org -> sys : 8.assegnaPersonaleATurno(turno, personale, ruolo)
+  sys --> org : assegnazione registrata
+end
+
+  org -> sys : 9.chiudiEvento(note, documentazione)
+  sys --> org : evento terminato
+
+destroy sys
+
+@enduml

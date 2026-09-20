@@ -1,0 +1,56 @@
+@startuml ssd_ext8
+skinparam sequenceArrowThickness 2
+skinparam sequenceGroupBorderThickness 1
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor "Organizzatore" as org #White
+participant "Sistema" as sys #White
+
+hide footbox
+
+org -> sys : 1.creaSchedaEvento(luogo, dataInizio, durata, numeroServiziRichiesti, numeroPartecipanti, note, cliente)
+sys --> org : scheda registrata [stato: bozza]
+
+opt
+  org -> sys : 2.visualizzaStatoCucina()
+  sys --> org : impegni della cucina nei giorni richiesti
+end
+
+loop
+  org -> sys : 3.aggiungiServizio(tipoServizio, offsetInizio, oraInizio, oraFine, numeroCommensali)
+  sys --> org : servizio aggiunto
+opt
+  org -> sys : 4.inserisciTurnoServizio(servizio, tempoPreparazione, tempoRigoverno)
+  sys --> org : turno di servizio registrato
+  end
+end
+
+org -> sys : 5.assegnaChef(chef)
+sys --> org : chef assegnato
+
+loop
+  org -> sys : 6.consultaMenuServizio(servizio)
+  sys --> org : menù proposto dallo chef per il servizio
+opt
+  org -> sys : 7.approvaMenu(servizio, menu)
+  sys --> org : approvazione registrata
+  end
+end
+
+loop
+  org -> sys : 8.assegnaPersonaleATurno(turno, personale, ruolo)
+  sys --> org : assegnazione registrata
+end
+
+loop #F3FFE3
+  org -> sys : **9**.chiudiEvento(note, documentazione)
+  alt #ECD4FF
+    sys --> org : evento terminato
+    destroy sys
+  else #ECD4FF
+    sys --> org : **9a.1** turni di servizio non ancora conclusi, chiusura non consentita
+  end
+end
+
+@enduml

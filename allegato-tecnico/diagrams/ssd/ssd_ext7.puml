@@ -1,0 +1,74 @@
+@startuml ssd_ext7
+skinparam sequenceArrowThickness 2
+skinparam sequenceGroupBorderThickness 1
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor "Organizzatore" as org #White
+participant "Sistema" as sys #White
+
+hide footbox
+
+org -> sys : 1.creaSchedaEvento(luogo, dataInizio, durata, numeroServiziRichiesti, numeroPartecipanti, note, cliente)
+sys --> org : scheda registrata [stato: bozza]
+
+opt
+  org -> sys : 2.visualizzaStatoCucina()
+  sys --> org : impegni della cucina nei giorni richiesti
+end
+
+loop
+  org -> sys : 3.aggiungiServizio(tipoServizio, offsetInizio, oraInizio, oraFine, numeroCommensali)
+  sys --> org : servizio aggiunto
+opt
+  org -> sys : 4.inserisciTurnoServizio(servizio, tempoPreparazione, tempoRigoverno)
+  sys --> org : turno di servizio registrato
+  end
+end
+
+org -> sys : 5.assegnaChef(chef)
+sys --> org : chef assegnato
+
+loop
+  org -> sys : 6.consultaMenuServizio(servizio)
+  sys --> org : menù proposto dallo chef per il servizio
+
+opt
+  org -> sys : 7.approvaMenu(servizio, menu)
+  sys --> org : approvazione registrata
+  end
+end
+
+loop #D9E9FF
+  loop #FFE9C9
+    alt #F3FFE3
+      org -> sys : **8**.assegnaPersonaleATurno(turno, personale, ruolo)
+      alt #ECD4FF
+        sys --> org : assegnazione registrata
+      else #ECD4FF
+        sys --> org : **8c.1** personale non disponibile o in conflitto, assegnazione non consentita
+      end
+    else #F3FFE3
+      org -> sys : **8a.1** assegnaCuocoATurno(turno, cuoco)
+      alt #ECD4FF
+        sys --> org : cuoco assegnato al turno
+      else #ECD4FF
+        sys --> org : **8a.1a.1** cuoco non disponibile o in conflitto, assegnazione non consentita
+      end
+    else #F3FFE3
+      org -> sys : **8b.1** rimuoviPersonaleDaTurno(turno, personale)
+      alt #ECD4FF
+        sys --> org : assegnazione rimossa
+      else #ECD4FF
+        sys --> org : **8b.1a.1** turno già svolto o in corso, rimozione non consentita
+      end
+    end
+  end
+end
+
+  org -> sys : 9.chiudiEvento(note, documentazione)
+  sys --> org : evento terminato
+
+destroy sys
+
+@enduml

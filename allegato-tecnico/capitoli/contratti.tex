@@ -1,0 +1,587 @@
+% ─────────────────────────────────────────────────────────────
+%  Contratti delle Operazioni — Gestire gli eventi
+%  Ordinati per passo/estensione del caso d'uso: 1, 1a, 1b, ...,
+%  2, 3, 4, 5, 5a, 5b, 6, 7, 7a, 8, 8a, 8b, 9.
+%
+%  Convenzioni tipografiche (vedi \cobj/\cparam/\crel in main.tex):
+%    corsivo         istanza/oggetto già legato (es. e, me, org)
+%    sottolineato     parametro formale dell'operazione, ovunque citato
+%    grassetto        relazione/ruolo/verbo logico del modello di dominio
+%    testo normale    nomi di classe e valori letterali di stato
+% ─────────────────────────────────────────────────────────────
+
+\noindent\textbf{Pre-condizione generale:} l'attore è identificato con
+un'istanza \cobj{org} di Organizzatore.
+
+\bigskip
+
+% ─── 1. creaSchedaEvento ─────────────────────────────────────
+\begin{contratto}{1. creaSchedaEvento(\cparam{luogo}: String, \cparam{dataInizio}: LocalDate, \cparam{durata}: int, \cparam{numeroServiziRichiesti}: int, \cparam{numeroPartecipanti}: int, \cparam{note}: String, \cparam{cliente}: String)}
+  \cpre{%
+    La data corrente dista da \cparam{dataInizio} almeno due
+    settimane (soglia maggiore, a discrezione dell'organizzatore,
+    per eventi di grandi dimensioni --- 50 o più partecipanti ---
+    o che si estendono su più giornate); altrimenti Eccezione 1a.1.
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È stata creata un'istanza \cobj{e} di Evento,
+            senza ancora alcun Servizio associato.
+      \item \cobj{e.luogo} = \cparam{luogo};
+      \item \cobj{e.dataInizio} = \cparam{dataInizio};
+      \item \cobj{e.durata} = \cparam{durata};
+      \item \cobj{e.numeroServiziRichiesti} = \cparam{numeroServiziRichiesti}.
+      \item \cobj{e.note} = \cparam{note};
+      \item \cobj{e.cliente} = \cparam{cliente}.
+      \item \cobj{e.numeroPartecipanti} = \cparam{numeroPartecipanti}.
+      \item \cobj{e.numPartecipantiIniziale} = \cparam{numeroPartecipanti}.
+      \item \cobj{e.stato} = bozza.
+      \item \cobj{org} \crel{gestisce} \cobj{e}.
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 1b.1. apriEvento ────────────────────────────────────────
+\begin{contratto}{1b.1 apriEvento(\cparam{evento}: Event)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item \cparam{evento}.stato = bozza oppure
+            \cparam{evento}.stato = in\_corso oppure
+            \cparam{evento}.stato = terminato oppure
+            \cparam{evento}.stato = annullato.
+      \item \cobj{org} \crel{gestisce} \cparam{evento}.
+    \end{itemize}
+  }
+  \cpost{(nessuna --- navigazione alla scheda evento esistente)}
+\end{contratto}
+
+% ─── 1c.1. creaSchedaEventoRicorrente ───────────────────────
+\newpage
+\begin{contratto}{1c.1 creaSchedaEventoRicorrente(\cparam{luogo}: String, \cparam{dataInizio}: LocalDate, \cparam{durata}: int, \cparam{numeroServiziRichiesti}: int, \cparam{numeroPartecipanti}: int, \cparam{note}: String, \cparam{cliente}: String, \cparam{tipoFrequenza}: String, \cparam{dataFine}?: LocalDate, \cparam{numeroOccorrenze}?: Integer)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item La data corrente dista dalla data di inizio della prima istanza almeno due settimane (soglia
+            maggiore, a discrezione dell'organizzatore, per eventi di grandi dimensioni --- 50 o più
+            partecipanti --- o che si estendono su più giornate); altrimenti Eccezione 1a.
+      \item[\textit{Nota:}] \cparam{dataFine} e \cparam{numeroOccorrenze} sono alternativi tra loro: ne
+            va specificato esattamente uno.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È stata creata un'istanza \cobj{me} di Evento Ricorrente, con
+            \cobj{me.luogo} = \cparam{luogo}, \cobj{me.durata} = \cparam{durata},
+            \cobj{me.numeroServiziRichiesti} = \cparam{numeroServiziRichiesti},
+            \cobj{me.numeroPartecipanti} = \cparam{numeroPartecipanti},
+            \cobj{me.note} = \cparam{note}, \cobj{me.cliente} = \cparam{cliente}.
+      \item È stata creata un'istanza \cobj{p} di Periodicità
+            con \cobj{p.frequenza} = \cparam{tipoFrequenza},
+            \cobj{p.dataFine} = \cparam{dataFine} oppure \cobj{p.numeroOccorrenze}
+            = \cparam{numeroOccorrenze} (a seconda di quale dei due è stato specificato);
+            \cobj{me} \crel{si ripete con} \cobj{p}.
+      \item Per ogni data calcolata dalla frequenza fino alla
+            conclusione: è stata creata un'istanza \cobj{e} di
+            Evento, senza ancora alcun Servizio
+            associato; \cobj{e} è \crel{istanza di} \cobj{me};
+            \cobj{e} eredita \cparam{luogo}, \cparam{durata},
+            \cparam{numeroServiziRichiesti}, \cparam{numeroPartecipanti},
+            \cparam{note}, \cparam{cliente} dal capofila; \cobj{e.dataInizio} è
+            calcolata secondo \cobj{p}; \cobj{e.stato} = bozza.
+      \item \cobj{e.numPartecipantiIniziale} = \cparam{numeroPartecipanti}.
+      \item \cobj{org} \crel{gestisce} \cobj{me}.
+      \vspace{\baselineskip}
+      \item[\textit{Nota:}] i servizi aggiunti (mediante
+            aggiungiServizio) a una qualunque istanza ancora in
+            stato bozza, finché la serie è in fase di costruzione,
+            vengono replicati automaticamente sulle altre istanze
+            ancora in stato bozza della stessa ricorrenza.
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 1d.1. modificaSchedaEvento ─────────────────────────────
+\begin{contratto}{1d.1 modificaSchedaEvento(\cparam{luogo}?: String, \cparam{dataInizio}?: LocalDate, \cparam{durata}?: Integer, \cparam{numeroServiziRichiesti}?: Integer, \cparam{numeroPartecipanti}?: Integer, \cparam{note}?: String, \cparam{cliente}?: String)}
+  \cpre{%
+    È in corso la gestione di un Evento \cobj{e} in stato
+    bozza; altrimenti Eccezione 1d.1a.
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item Per ogni parametro descrittivo fornito
+            (\cparam{luogo}, \cparam{dataInizio}, \cparam{durata},\\
+            \cparam{numeroServiziRichiesti}, \cparam{numeroPartecipanti},
+            \cparam{note}, \cparam{cliente}), il corrispondente
+            attributo di \cobj{e} è stato aggiornato.
+      \item Se \cparam{numeroPartecipanti} è specificato:
+            \cobj{e.numPartecipantiIniziale} = \cparam{numeroPartecipanti}
+            (il valore iniziale di riferimento per il controllo di
+            variazione resta così allineato all'ultimo valore
+            confermato prima dell'avvio dei lavori).
+    \end{itemize}
+  }
+\end{contratto}
+
+\smallskip
+\noindent\textit{Nota:} l'aggiunta di un servizio a un evento in bozza
+riusa i contratti \textbf{3. aggiungiServizio} e
+\textbf{4. inserisciTurnoServizio}; la rimozione usa il contratto
+dedicato seguente.
+\smallskip
+
+% ─── 1d.1. rimuoviServizio ───────────────────────────────────
+\newpage
+\begin{contratto}{1d.1 (rimozione servizio) rimuoviServizio(\cparam{servizio}: Service)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È in corso la gestione di un Evento \cobj{e} in stato
+            bozza; altrimenti Eccezione 1d.1a.
+      \item \cparam{servizio} è un Servizio di \cobj{e}.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item Il Turno di Servizio associato a \cparam{servizio} e
+            ogni Incarico di Servizio in esso previsto sono stati
+            eliminati.
+      \item \cparam{servizio} è stato eliminato da \cobj{e}.
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 1d.2. modificaSchedaEventoInCorso ──────────────────────
+\begin{contratto}{1d.2 modificaSchedaEventoInCorso(\cparam{numeroPartecipanti}?: Integer, \cparam{note}?: String)}
+  \cpre{%
+    È in corso la gestione di un Evento \cobj{e} in stato
+    in\_corso; altrimenti Eccezione 1d.1a.
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item Se \cparam{numeroPartecipanti} è specificato:
+            \cobj{e.numeroPartecipanti} = \cparam{numeroPartecipanti}.
+      \item Se \cparam{note} è specificato: \cobj{e.note} =
+            \cparam{note}.
+      \item Se \cparam{numeroPartecipanti} è specificato con una
+            variazione superiore al 30\% rispetto al valore
+            iniziale: il sistema segnala che potrebbe essere
+            addebitata una penale al cliente (Eccezione 1d.2a),
+            lasciando l'eventuale deroga a discrezione
+            dell'organizzatore.
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 1e.1. eliminaEvento ─────────────────────────────────────
+\begin{contratto}{1e.1 eliminaEvento(\cparam{evento}: Event)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item \cobj{org} \crel{gestisce} \cparam{evento}.
+      \item \cparam{evento}.stato = bozza; altrimenti Eccezione 1e.1a.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item Per ogni Servizio associato a \cparam{evento}: il Turno di
+            Servizio associato e ogni Incarico di Servizio in esso
+            previsto sono stati eliminati, e il Servizio stesso è stato
+            eliminato.
+      \item \cparam{evento} è stato eliminato.
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 1f.1. annullaEvento ─────────────────────────────────────
+\begin{contratto}{1f.1 annullaEvento(\cparam{evento}: Event)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item \cobj{org} \crel{gestisce} \cparam{evento}.
+      \item \cparam{evento}.stato = in\_corso; altrimenti Eccezione 1f.1b.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item \cparam{evento}.stato = annullato.
+      \item Per ogni Servizio \cobj{s} in cui \cparam{evento} è
+            suddiviso: \cobj{s.stato} = annullato e ogni Incarico
+            di Servizio previsto in un Turno di servizio di
+            \cobj{s} è stato eliminato.
+      \item Se la data corrente è a meno di una settimana da
+            \cparam{evento}.dataInizio: il sistema segnala che verrà
+            addebitata una penale al cliente (Eccezione 1f.1a).
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 1g.1. selezionaIstanza ───────────────────────────────────
+\newpage
+\begin{contratto}{1g.1 selezionaIstanza(\cparam{istanza}: Event)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item \cparam{istanza} è \crel{istanza di} un Evento Ricorrente \cobj{er}.
+      \item \cobj{org} \crel{gestisce} \cobj{er}.
+    \end{itemize}
+  }
+  \cpost{(nessuna --- navigazione all'istanza selezionata, in vista
+    della richiesta dello scope dell'operazione successiva)}
+\end{contratto}
+
+% ─── 1g.2. operaSuIstanza ────────────────────────────────────
+\begin{contratto}{1g.2 operaSuIstanza(\cparam{istanza}: Event, \cparam{cmd}: EventCommand, \cparam{scope}: Scope)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item \cparam{istanza} è \crel{istanza di} un Evento Ricorrente \cobj{er}
+            (\cparam{istanza} è un Evento).
+      \item \cobj{org} \crel{gestisce} \cobj{er}.
+      \item[\textit{Nota:}] \cparam{cmd} è un'operazione già selezionata
+            e predisposta dall'attore (modifica, annullamento o
+            eliminazione) da eseguire su una o più istanze; il tipo
+            concreto di \cparam{cmd} determina quale delle tre
+            operazioni viene applicata.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item Se \cparam{scope} = SINGOLA: \cparam{cmd} è \crel{stata
+            applicata a} \cparam{istanza}, se le regole di
+            modificabilità lo consentono (\cparam{istanza} non deve
+            trovarsi in stato terminato né annullato); altrimenti
+            l'operazione non ha effetto su \cparam{istanza}.
+      \item Se \cparam{scope} = TUTTE: \cparam{cmd} è \crel{stata
+            applicata a} ogni Evento \crel{istanza di} \cobj{er}
+            su cui era consentita (cioè non in stato terminato né
+            annullato).
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 1h.1. modificaRicorrenza ────────────────────────────────
+\begin{contratto}{1h.1 modificaRicorrenza(\cparam{er}: RecurringEvent, \cparam{tipoFrequenza}?: String, \cparam{dataFine}?: LocalDate, \cparam{numeroOccorrenze}?: Integer)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item \cparam{er} è un Evento Ricorrente che \crel{si ripete
+            con} una Periodicità \cobj{p}.
+      \item \cobj{org} \crel{gestisce} \cparam{er}.
+      \item Esiste almeno un Evento \crel{istanza di} \cparam{er}
+            non ancora annullato né terminato.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item Se \cparam{tipoFrequenza} è specificata: \cobj{p.frequenza} = \cparam{tipoFrequenza}.
+      \item Se \cparam{dataFine} è specificata: \cobj{p.dataFine} = \cparam{dataFine}.
+      \item Se \cparam{numeroOccorrenze} è specificato:
+            \cobj{p.numeroOccorrenze} = \cparam{numeroOccorrenze}.
+      \vspace{\baselineskip}
+      \item[\textit{Nota:}] \cparam{dataFine} e \cparam{numeroOccorrenze}
+            sono alternativi tra loro: ne va specificato al più uno.
+      \vspace{\baselineskip}
+      \item Le istanze già presenti in calendario sono rimaste invariate.
+      \item Le istanze in eccesso (fuori dalla nuova conclusione) sono
+            state eliminate.
+      \item Le istanze mancanti (generate dalla nuova frequenza o
+            conclusione) sono state create sul modello del capofila
+            \cparam{er}.
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 1i.1. annullaServizio ───────────────────────────────────
+\newpage
+\begin{contratto}{1i.1 annullaServizio(\cparam{servizio}: Service)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È in corso la gestione di un Evento \cobj{e}.
+      \item \cparam{servizio} è un Servizio di \cobj{e}.
+      \item \cparam{servizio}.stato $\neq$ annullato e
+            \cparam{servizio}.stato $\neq$ terminato; altrimenti
+            Eccezione 1i.1a.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item \cparam{servizio}.stato = annullato.
+      \item Ogni Incarico di Servizio previsto in un
+            Turno di servizio di \cparam{servizio} è stato
+            eliminato.
+      \item Il sistema segnala la possibilità di una penale al
+            cliente.
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 2. visualizzaStatoCucina ─────────────────────────────────
+\begin{contratto}{2. visualizzaStatoCucina()}
+  \cpre{È in corso la gestione di un Evento \cobj{e}.}
+  \cpost{(nessuna --- interrogazione al sistema)}
+\end{contratto}
+
+% ─── 3. aggiungiServizio ──────────────────────────────────────
+\begin{contratto}{3. aggiungiServizio(\cparam{tipoServizio}: String, \cparam{offsetInizio}: int, \cparam{oraInizio}: LocalTime, \cparam{oraFine}: LocalTime, \cparam{numeroCommensali}: int)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È in corso la gestione di un Evento \cobj{e} in stato
+            bozza.
+      \item La data del servizio, calcolata da \cobj{e.dataInizio} e
+            \cparam{offsetInizio}, non precede la data corrente e resta
+            entro l'intervallo di date previsto per \cobj{e};
+            altrimenti Eccezione 3a.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È stata creata un'istanza \cobj{s} di Servizio.
+      \item \cobj{s.tipologia} = \cparam{tipoServizio};
+      \item \cobj{s.offsetInizio} = \cparam{offsetInizio};
+      \item \cobj{s.oraInizio} = \cparam{oraInizio};
+      \item \cobj{s.oraFine} = \cparam{oraFine};
+      \item \cobj{s.numeroCommensali} = \cparam{numeroCommensali};
+      \item \cobj{s.stato} = in\_preparazione;
+      \item \cobj{e} \crel{prevede} \cobj{s}.
+      \item Se \cobj{e} è istanza di un Evento ricorrente, un Servizio
+            con gli stessi attributi è stato creato in ogni altra
+            istanza ancora in stato bozza per cui la data risultante è
+            valida.
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 4. inserisciTurnoServizio ───────────────────────────────
+\newpage
+\begin{contratto}{4. inserisciTurnoServizio(\cparam{servizio}: Service, \cparam{tempoPreparazione}: int, \cparam{tempoRigoverno}: int)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È in corso la gestione di un Evento \cobj{e} in stato
+            bozza.
+      \item \cparam{servizio} è un Servizio di \cobj{e}.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È stata creata un'istanza \cobj{t} di Turno di servizio;
+      \item \cobj{t.offsetPrima} = \cparam{tempoPreparazione};
+      \item \cobj{t.offsetDopo} = \cparam{tempoRigoverno};
+      \item \cobj{t.luogo} = \cobj{e.luogo};
+      \item detti \cobj{i} e \cobj{f} l'istante di inizio e quello di fine di
+            \cparam{servizio} --- ricavati dalla data del servizio, calcolata
+            da \cobj{e.dataInizio} e \cparam{servizio}.offsetInizio, e dalle
+            ore \cparam{servizio}.oraInizio e \cparam{servizio}.oraFine ---
+            si ha \cobj{t.inizio} = \cobj{i} anticipato di
+            \cparam{tempoPreparazione} e \cobj{t.fine} = \cobj{f} posticipato
+            di \cparam{tempoRigoverno};
+      \item se \cparam{servizio}.oraFine non è successiva a
+            \cparam{servizio}.oraInizio, il servizio attraversa la mezzanotte
+            e \cobj{f} cade nel giorno seguente; vale comunque
+            \cobj{t.inizio} $<$ \cobj{t.fine};
+      \item \cparam{servizio} \crel{prevede} \cobj{t}.
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 5. assegnaChef ──────────────────────────────────────────
+\begin{contratto}{5. assegnaChef(\cparam{chef}: User)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È in corso la gestione di un Evento \cobj{e} in stato bozza.
+      \item \cparam{chef} ha effettivamente il ruolo di Chef.
+      \item Lo chef indicato è disponibile e non ha altri incarichi in
+            conflitto nelle date dell'evento; altrimenti Eccezione 5b.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item \cobj{e} è \crel{assegnato a} \cparam{chef}.
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 6. consultaMenuServizio ─────────────────────────────────
+\begin{contratto}{6. consultaMenuServizio(\cparam{servizio}: Service)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È in corso la gestione di un Evento \cobj{e}.
+      \item \cparam{servizio} è un Servizio di \cobj{e}.
+    \end{itemize}
+  }
+  \cpost{(nessuna --- interrogazione al sistema: restituisce il
+    Menù scelto per \cparam{servizio})}
+\end{contratto}
+
+% ─── 7. approvaMenu ──────────────────────────────────────────
+\begin{contratto}{7. approvaMenu(\cparam{servizio}: Service, \cparam{menu}: Menu)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È in corso la gestione di un Evento \cobj{e} in stato
+            bozza.
+      \item \cparam{servizio} è un Servizio di \cobj{e}.
+      \item \cparam{menu} è stato proposto dallo chef ed è scelto per
+            \cparam{servizio}, con \cparam{servizio}.stato =
+            in\_preparazione; altrimenti (nessun menù ancora
+            proposto) Eccezione 7b.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item \cparam{servizio}.stato = confermato (lo stato del
+            Servizio a cui \cparam{menu} è associato segnala
+            l'approvazione).
+      \item Se tutti i Servizi di \cobj{e} sono in stato
+            confermato: \cobj{e.stato} = in\_corso.
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 7a.1. proponiModificaMenu ────────────────────────────────
+\begin{contratto}{7a.1 proponiModificaMenu(\cparam{servizio}: Service, \cparam{menu}: Menu, \cparam{voci}: List$\langle$MenuItem$\rangle$, \cparam{operazione}: ProposalOperation)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È in corso la gestione di un Evento \cobj{e}.
+      \item \cparam{servizio} è un Servizio di \cobj{e} con
+            \cparam{servizio}.stato = in\_preparazione; altrimenti
+            (menù già confermato) Eccezione 7a.1a.
+      \item \cparam{menu} è scelto per \cparam{servizio}.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È stata creata un'istanza \cobj{pm} di
+            Proposta di Modifica, nella specifica sottoclasse
+            Proposta di Aggiunta o Proposta di
+            Eliminazione secondo \cparam{operazione}.
+      \item \cobj{pm} \crel{riguarda} \cparam{servizio}.
+      \item \cobj{pm} \crel{modifica} \cparam{menu}.
+      \item Il Menù originale non è modificato.
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 8. assegnaPersonaleATurno ───────────────────────────────
+\begin{contratto}{8. assegnaPersonaleATurno(\cparam{turno}: ServiceShift, \cparam{personale}: User, \cparam{ruolo}: String)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È in corso la gestione di un Evento \cobj{e}.
+      \item \cparam{turno} è un Turno di servizio previsto da un
+            Servizio di \cobj{e}.
+      \item \cparam{personale} ha il ruolo di Personale di servizio.
+      \item Il membro del personale inserito ha fornito la propria
+            disponibilità per la fascia oraria del turno e non ha
+            incarichi concomitanti in altre sedi; altrimenti Eccezione 8c.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È stata creata un'istanza \cobj{a} di
+            Incarico di Servizio.
+      \item \cobj{a.ruolo} = \cparam{ruolo}.
+      \item \cobj{a} è \crel{assegnato a} \cparam{personale}.
+      \item \cobj{a} è \crel{previsto in} \cparam{turno}.
+      \vspace{\baselineskip}
+      \item[\textit{Nota:}] l'operazione può essere eseguita anche in
+            via anticipata, come previsto dall'Estensione 5a del caso
+            d'uso, prima dell'approvazione definitiva dei menù dei
+            servizi; l'assegnazione resta valida
+            indipendentemente dallo stato di approvazione del menù.
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 8a.1. assegnaCuocoATurno ────────────────────────────────
+\begin{contratto}{8a.1 assegnaCuocoATurno(\cparam{turno}: ServiceShift, \cparam{cuoco}: User)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È in corso la gestione di un Evento \cobj{e}.
+      \item \cparam{turno} è un Turno di servizio previsto da un
+            Servizio di \cobj{e}.
+      \item \cparam{cuoco} ha il ruolo di Cuoco.
+      \item Il cuoco indicato ha fornito la propria disponibilità per
+            la fascia oraria del turno e non ha incarichi concomitanti
+            in altre sedi; altrimenti Eccezione 8a.1a.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item \cparam{turno} \crel{ha cuoco di supporto} \cparam{cuoco}.
+      \vspace{\baselineskip}
+      \item[\textit{Nota:}] a differenza dell'assegnazione del
+            personale di servizio (contratto 8), il cuoco di supporto
+            non genera un Incarico di Servizio: un Turno di servizio
+            ha al più un cuoco di supporto, assegnato direttamente.
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 8b.1. rimuoviPersonaleDaTurno ───────────────────────────
+\begin{contratto}{8b.1 rimuoviPersonaleDaTurno(\cparam{turno}: ServiceShift, \cparam{personale}: User)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item È in corso la gestione di un Evento \cobj{e}.
+      \item Esiste un Incarico di Servizio assegnato a
+            \cparam{personale} e previsto in \cparam{turno}.
+      \item \cparam{turno} è ancora modificabile (non ancora svolto,
+            né in corso di svolgimento); altrimenti Eccezione 8b.1a.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item L'istanza di Incarico di Servizio assegnata a
+            \cparam{personale} e prevista in \cparam{turno} è stata
+            eliminata.
+    \end{itemize}
+  }
+\end{contratto}
+
+% ─── 9. chiudiEvento ─────────────────────────────────────────
+\begin{contratto}{9. chiudiEvento(\cparam{note}: String, \cparam{documentazione}: String)}
+  \cpre{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item \cobj{e.stato} = in\_corso.
+      \item Tutti i turni di servizio previsti da \cobj{e} sono
+            conclusi (data/ora già passata); altrimenti Eccezione 9a.
+    \end{itemize}
+  }
+  \cpost{%
+    \mbox{}\par
+    \begin{itemize}[nosep]
+      \item \cobj{e.stato} = terminato.
+      \item Ogni Servizio \cobj{s} di \cobj{e} è stato impostato
+            allo stato terminato.
+      \item \cobj{e.note} viene aggiornato accodando \cparam{note}.
+      \item \cobj{e.documentazioneFinale} = \cparam{documentazione}.
+    \end{itemize}
+  }
+\end{contratto}

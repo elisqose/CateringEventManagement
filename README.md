@@ -42,11 +42,7 @@ L'allegato tecnico include l'intero ciclo di analisi e progettazione:
 7. **Diagrammi di Sequenza di Progetto (DSD)**
 
 ### Compilazione dell'Allegato Tecnico
-Per compilare l'allegato tecnico in PDF:
-```bash
-cd allegato-tecnico
-python3 build.py
-```
+
 Lo script `build.py` gestisce automaticamente:
 * Il download e l'esecuzione di PlantUML (`plantuml.jar`)
 * La conversione dei diagrammi UML in immagini ad alta risoluzione
@@ -64,8 +60,4 @@ Il modulo `catering` contiene l'implementazione Java del sistema:
 * **Test:** Suite di test di unità JUnit.
 
 ### Esecuzione e Test
-Il progetto è gestito tramite **Maven**:
-```bash
-cd catering
-mvn test
-```
+Il progetto è gestito tramite **Maven**.
